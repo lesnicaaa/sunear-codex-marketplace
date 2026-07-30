@@ -153,3 +153,14 @@ test("CLI does not accept authentication or base URL flags", () => {
   assert.notEqual(result.status, 0);
   assert.doesNotMatch(`${result.stdout}${result.stderr}`, /cli-secret|env-key/);
 });
+
+test("staging smoke requires a semantic design example", async () => {
+  const { smokeSubmission } = await import(`${new URL(`file://${path.join(root, "scripts/smoke-install.mjs")}`)}?test=${Date.now()}`);
+  assert.throws(() => smokeSubmission({ examples: [{ submission: { batchDesign: { items: [{}] } } }] }), /semantic design/);
+  const submission = smokeSubmission({ examples: [{ submission: {
+    idempotencyKey: "example-semantic-design",
+    batchDesign: { items: [{ design: { product: {}, layout: {}, members: [] } }] },
+  } }] });
+  assert.match(submission.idempotencyKey, /^codex-marketplace-smoke-/);
+  assert.deepEqual(submission.batchDesign.items[0].design.members, []);
+});

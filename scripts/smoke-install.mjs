@@ -43,9 +43,14 @@ function validateReviewUrl(value, expectedOrigin) {
   return url;
 }
 
-function smokeSubmission(examples) {
-  const submission = structuredClone(examples?.examples?.[0]?.submission);
-  assert.ok(submission && typeof submission === "object", "examples must include a submission");
+export function smokeSubmission(examples) {
+  const example = examples?.examples?.find(({ submission }) =>
+    submission?.batchDesign?.items?.some(
+      (item) => item?.design?.product && item?.design?.layout && Array.isArray(item?.design?.members),
+    ),
+  );
+  const submission = structuredClone(example?.submission);
+  assert.ok(submission && typeof submission === "object", "examples must include a semantic design submission");
   submission.idempotencyKey = `codex-marketplace-smoke-${Date.now()}-${process.pid}`;
   return submission;
 }
