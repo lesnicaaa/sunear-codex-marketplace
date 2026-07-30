@@ -1,0 +1,8 @@
+[extend]
+useDefault = true
+
+[[allowlists]]
+description = "Intentional fake credential used to verify release rejection"
+paths = ['''tests/release-boundary\.spec\.mjs''']
+regexTarget = "match"
+regexes = ['''sk_live_actualcredentialvalue''']
