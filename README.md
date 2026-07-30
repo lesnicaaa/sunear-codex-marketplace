@@ -11,6 +11,24 @@ codex plugin add sunear-designer@sunear
 
 An invited organization must provide its administrator-issued key as `SUNEAR_AGENT_API_KEY`. Do not put the key in prompts, command arguments, URLs, documents, screenshots, or support messages.
 
+## Release verification
+
+Maintainers can verify installation from a disposable Codex profile without changing their normal Codex configuration:
+
+```sh
+npm run smoke:install
+```
+
+This always verifies local marketplace installation, plugin and skill discovery, and the documented missing-key failure. Authenticated checks are reported as `SKIP` unless both `SUNEAR_STAGING_AGENT_KEY` and `SUNEAR_STAGING_BASE_URL` are present; a skip is not an authenticated pass.
+
+```sh
+SUNEAR_STAGING_AGENT_KEY="..." \
+SUNEAR_STAGING_BASE_URL="https://staging.example" \
+npm run smoke:install
+```
+
+The smoke test captures service responses and validates Review Links without printing the key, the full link, or its access fragment. See [the release checklist](docs/release-checklist.md) before tagging.
+
 ## Data boundary
 
 Codex reads source documents locally. The plugin sends only bounded project facts needed for the requested Sunear operation, together with source references when supported. It does not send the original document bytes.

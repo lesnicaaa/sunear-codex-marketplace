@@ -1,5 +1,7 @@
 .agents/plugins/marketplace.json
+docs/release-checklist.md
 LICENSE
+package.json
 PRIVACY.md
 README.md
 SECURITY.md
@@ -8,3 +10,4 @@ plugins/sunear-designer/scripts/sunear_agent_client.mjs
 plugins/sunear-designer/skills/create-sunear-design-from-pdf/SKILL.md
 plugins/sunear-designer/skills/create-sunear-design-from-pdf/references/api.md
 plugins/sunear-designer/skills/create-sunear-design-from-pdf/references/schema.md
+scripts/smoke-install.mjs

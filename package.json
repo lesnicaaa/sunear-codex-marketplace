@@ -5,6 +5,7 @@
   "type": "module",
   "scripts": {
     "test": "node --test tests/*.spec.mjs && node scripts/validate-plugin.mjs",
+    "smoke:install": "node scripts/smoke-install.mjs",
     "release:build": "node scripts/build-release.mjs",
     "release:check": "npm test && npm run release:build"
   }
