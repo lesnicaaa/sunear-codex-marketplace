@@ -4,6 +4,6 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "test": "node scripts/validate-plugin.mjs"
+    "test": "node --test tests/*.spec.mjs && node scripts/validate-plugin.mjs"
   }
 }
