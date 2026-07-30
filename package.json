@@ -4,6 +4,8 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "test": "node --test tests/*.spec.mjs && node scripts/validate-plugin.mjs"
+    "test": "node --test tests/*.spec.mjs && node scripts/validate-plugin.mjs",
+    "release:build": "node scripts/build-release.mjs",
+    "release:check": "npm test && npm run release:build"
   }
 }

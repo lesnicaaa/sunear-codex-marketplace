@@ -1,0 +1,10 @@
+.agents/plugins/marketplace.json
+LICENSE
+PRIVACY.md
+README.md
+SECURITY.md
+plugins/sunear-designer/.codex-plugin/plugin.json
+plugins/sunear-designer/scripts/sunear_agent_client.mjs
+plugins/sunear-designer/skills/create-sunear-design-from-pdf/SKILL.md
+plugins/sunear-designer/skills/create-sunear-design-from-pdf/references/api.md
+plugins/sunear-designer/skills/create-sunear-design-from-pdf/references/schema.md
