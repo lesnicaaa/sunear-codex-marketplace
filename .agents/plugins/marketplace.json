@@ -1,0 +1,10 @@
+{
+  "name": "sunear",
+  "interface": { "displayName": "Sunear" },
+  "plugins": [{
+    "name": "sunear-designer",
+    "source": { "source": "local", "path": "./plugins/sunear-designer" },
+    "policy": { "installation": "AVAILABLE", "authentication": "ON_INSTALL" },
+    "category": "Productivity"
+  }]
+}

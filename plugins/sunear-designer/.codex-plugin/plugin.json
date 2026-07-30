@@ -1,0 +1,20 @@
+{
+  "name": "sunear-designer",
+  "version": "0.1.0",
+  "description": "Create reviewable Sunear door and window projects from local documents.",
+  "author": { "name": "Sunear", "url": "https://github.com/lesnicaaa" },
+  "homepage": "https://github.com/lesnicaaa/sunear-codex-marketplace",
+  "repository": "https://github.com/lesnicaaa/sunear-codex-marketplace",
+  "license": "MIT",
+  "keywords": ["sunear", "doors", "windows", "design"],
+  "interface": {
+    "displayName": "Sunear Designer",
+    "shortDescription": "Create reviewable door and window projects.",
+    "longDescription": "Turn locally read project documents into bounded facts for an authenticated Sunear project workflow.",
+    "developerName": "Sunear",
+    "category": "Productivity",
+    "capabilities": ["Read", "Write"],
+    "websiteURL": "https://github.com/lesnicaaa/sunear-codex-marketplace",
+    "privacyPolicyURL": "https://github.com/lesnicaaa/sunear-codex-marketplace/blob/main/PRIVACY.md"
+  }
+}
