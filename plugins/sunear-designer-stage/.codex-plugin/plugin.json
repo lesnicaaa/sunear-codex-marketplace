@@ -1,6 +1,6 @@
 {
   "name": "sunear-designer-stage",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Internal Stage plugin for testing Sunear door and window design workflows through OAuth-protected MCP.",
   "author": {
     "name": "Sunear"

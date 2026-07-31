@@ -18,7 +18,7 @@ const mcp = await readJson(`${pluginRoot}/.mcp.json`);
 
 assert.equal(marketplace.name, "sunear-stage");
 assert.equal(plugin.name, "sunear-designer-stage");
-assert.equal(plugin.version, "0.1.0");
+assert.equal(plugin.version, "0.1.1");
 assert.match(plugin.version, /^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-[0-9A-Za-z.-]+)?(?:\+[0-9A-Za-z.-]+)?$/);
 assert.equal(plugin.mcpServers, "./.mcp.json");
 assert.equal(plugin.skills, "./skills/");
@@ -42,6 +42,8 @@ assert.deepEqual(mcp.mcpServers["sunear-stage"], {
 const skill = await readFile(path.join(root, pluginRoot, "skills/create-sunear-stage-design-from-pdf/SKILL.md"), "utf8");
 assert.match(skill, /^name: create-sunear-stage-design-from-pdf$/m);
 assert.match(skill, /Complete authentication through the OAuth sign-in flow\./);
+assert.match(skill, /Never claim that the page opened unless its browser or callback state was observed/);
+assert.match(skill, /Compute the source file SHA-256 before visual work/);
 assert.doesNotMatch(skill, /SUNEAR_AGENT_API_KEY|API key issued/i);
 
 for (const document of ["README.md", "LICENSE", "SECURITY.md", "PRIVACY.md"]) {

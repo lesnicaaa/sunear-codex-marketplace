@@ -39,6 +39,9 @@ test("Stage workflow requires OAuth and forbids production fallback", async () =
   assert.match(skill, /Use only the bundled `sunear-stage` MCP connection/);
   assert.match(skill, /Never substitute the production Sunear connection/);
   assert.match(skill, /Complete authentication through the OAuth sign-in flow/);
+  assert.match(skill, /Never claim that the page opened unless its browser or callback state was observed/);
+  assert.match(skill, /Compute the source file SHA-256 before visual work/);
+  assert.match(skill, /Do not re-render or re-read completed pages/);
   assert.doesNotMatch(skill, /SUNEAR_AGENT_API_KEY|SUNEAR_AGENT_BASE_URL/);
 });
 

@@ -25,7 +25,7 @@ codex plugin marketplace add lesnicaaa/sunear-codex-marketplace --ref stage
 codex plugin add sunear-designer-stage@sunear-stage
 ```
 
-Codex opens the Sunear Stage OAuth authorization flow during installation or first use. Sign in with an administrator-approved Stage account; Google sign-in is available when enabled for that account. Do not provide an API key in Codex, a prompt, a command, a URL, a document, a screenshot, or a support message.
+Codex starts the Sunear Stage OAuth authorization flow during installation or first use. The Stage workflow verifies that the browser page actually opened; if the current Codex client only prints a one-time authorization URL, it opens that URL with the operating-system browser and waits for the callback. Sign in with an administrator-approved Stage account; Google sign-in is available when enabled for that account. Do not provide an API key in Codex, a prompt, a command, a URL, a document, a screenshot, or a support message.
 
 Stage uses a separate origin, OAuth issuer, user and connection records, database, projects, and review links. The Stage plugin connects only to `https://www.stage.sunearbuild.com/api/mcp` and never falls back to production.
 
@@ -53,6 +53,8 @@ npm run smoke:install
 ```
 
 The smoke test verifies marketplace, plugin, skill, and OAuth MCP discovery. It does not store credentials or create a Stage project. Complete an interactive Google/OAuth sign-in and a bounded test project separately before approving the branch for administrator use.
+
+For large PDFs, the Stage skill fingerprints the source and resumes validated local scan checkpoints before doing visual work. This keeps page renders, source crops, evidence regions, and inventory separate from OAuth/MCP submission retries, reducing repeated analysis and token use without treating cached previews or guessed drafts as source truth.
 
 ## Data boundary
 
