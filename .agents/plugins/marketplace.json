@@ -1,9 +1,9 @@
 {
-  "name": "sunear",
-  "interface": { "displayName": "Sunear" },
+  "name": "sunear-stage",
+  "interface": { "displayName": "Sunear Stage" },
   "plugins": [{
-    "name": "sunear-designer",
-    "source": { "source": "local", "path": "./plugins/sunear-designer" },
+    "name": "sunear-designer-stage",
+    "source": { "source": "local", "path": "./plugins/sunear-designer-stage" },
     "policy": { "installation": "AVAILABLE", "authentication": "ON_INSTALL" },
     "category": "Productivity"
   }]

@@ -1,0 +1,22 @@
+{
+  "name": "sunear-designer-stage",
+  "version": "0.1.0",
+  "description": "Internal Stage plugin for testing Sunear door and window design workflows through OAuth-protected MCP.",
+  "author": {
+    "name": "Sunear"
+  },
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "Sunear Stage",
+    "shortDescription": "Internal testing only - never use for customer production projects.",
+    "longDescription": "Internal Sunear testing plugin. It signs in through the isolated Stage account system and creates projects only in the Stage database.",
+    "developerName": "Sunear",
+    "category": "Productivity",
+    "capabilities": ["Read", "Write"],
+    "brandColor": "#F97316",
+    "defaultPrompt": [
+      "Use Sunear Stage to test a door and window project from an uploaded PDF or image."
+    ]
+  },
+  "mcpServers": "./.mcp.json"
+}

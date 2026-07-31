@@ -1,29 +1,29 @@
-# Release checklist
+# Stage release checklist
 
-Do not create or push a tag until every required check below passes. Record the release commit and archive SHA-256 in the release review.
+Do not push the `stage` branch until every required check below passes. Do not create a production release tag from this branch.
 
 ## Public artifact
 
-- [ ] Plugin and marketplace manifests pass `npm test`.
-- [ ] `npm run release:build` produces the expected sorted inventory and archive.
-- [ ] The inventory matches `release-allowlist.txt`; the archive contains no extra files, symlinks, source maps, private implementation, fixtures, or non-public planning material.
-- [ ] `npm run release:check` passes the path, byte-content, credential-pattern, and public-boundary scans.
-- [ ] A separate secret scanner reports no credentials in the git tree, release inventory, or unpacked archive.
-- [ ] The release commit is clean and contains no unrelated or private-repository files.
+- [ ] Stage plugin and marketplace manifests pass `npm test`.
+- [ ] The marketplace name is `sunear-stage` and contains only `sunear-designer-stage`.
+- [ ] The plugin contains only its manifest, OAuth MCP configuration, and Stage workflow skill.
+- [ ] `npm run release:build` produces the expected sorted inventory and deterministic archive.
+- [ ] The archive contains no production client, API-key workflow, private implementation, fixtures, credentials, source maps, or unlisted files.
+- [ ] A credential-pattern scan reports no credentials in the tracked tree or release artifact.
 
-## Installation and staging
+## Installation and OAuth
 
-- [ ] `npm run smoke:install` installs the local marketplace and plugin using a disposable `CODEX_HOME` and discovers `create-sunear-design-from-pdf`.
-- [ ] The no-key run prints the documented missing-key rejection and an explicit authenticated `SKIP`, not a pass.
-- [ ] With `SUNEAR_STAGING_AGENT_KEY` and `SUNEAR_STAGING_BASE_URL`, the smoke passes capabilities, validate, create, read, revise, and Review Link shape checks.
-- [ ] Smoke output contains neither the organization key nor a complete Review Link or `rvw_` token.
-- [ ] Reusing the initially issued Review Link succeeds before rotation.
-- [ ] Explicit Review Link rotation issues a different link, invalidates the old link, and the replacement succeeds.
-- [ ] The staging smoke project is identified for cleanup according to the staging retention policy.
+- [ ] `npm run smoke:install` installs the local marketplace in a disposable `CODEX_HOME`.
+- [ ] Codex discovers and enables `sunear-designer-stage@sunear-stage`.
+- [ ] Codex discovers `create-sunear-stage-design-from-pdf` and the bundled `sunear-stage` MCP server.
+- [ ] Both MCP URL fields equal `https://www.stage.sunearbuild.com/api/mcp`.
+- [ ] Interactive authorization uses the isolated Stage OAuth issuer and succeeds with an approved administrator account, including Google sign-in where configured.
+- [ ] Unauthorized users are rejected and the plugin never falls back to production.
+- [ ] A bounded non-customer test submission validates and creates a project only in the Stage database.
 
 ## Publication
 
-- [ ] The destination is the public `sunear-codex-marketplace` repository, not the private application repository.
-- [ ] The archive checksum and exact inventory are attached to release review evidence.
-- [ ] Release approval is recorded before creating `v0.1.0`.
-- [ ] After publication, repeat installation and both missing-key and authenticated smoke checks from the public Git source.
+- [ ] The destination is the `stage` branch of the public `sunear-codex-marketplace` repository.
+- [ ] Production `main` and `v0.1.0` remain unchanged.
+- [ ] The branch diff contains no files from the private application repository.
+- [ ] After pushing, repeat installation from `--ref stage` and confirm the remote marketplace identity is `sunear-stage`.
