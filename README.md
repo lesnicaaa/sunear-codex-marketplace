@@ -56,6 +56,10 @@ The smoke test verifies marketplace, plugin, skill, and OAuth MCP discovery. It 
 
 For large PDFs, the Stage skill fingerprints the source and resumes validated local scan checkpoints before doing visual work. This keeps page renders, source crops, evidence regions, and inventory separate from OAuth/MCP submission retries, reducing repeated analysis and token use without treating cached previews or guessed drafts as source truth.
 
+Codex is the PDF entry point. All related files in one customer task form one source set and one Stage Project, even when they cover different floors, entrances, elevations, or drawing groups. Codex merges repeated and multi-view evidence into one stable project product list, then chooses exactly one creation path: an incomplete-structure product list or a fully validated batch design. Completed designs added later remain attached to the existing project product item.
+
+The Stage service returns the canonical `projectPath` and `reviewUrl`. Continue on the Web only for recognition review and project configuration at `/projects/{projectId}`, then quotation work at `/commercial`, `/commercial/result`, and `/commercial/document`. Do not upload the PDFs again. This workflow does not create inquiries or use a Web AI chat intake.
+
 ## Data boundary
 
 Codex reads source documents locally. The Stage workflow sends only bounded semantic project facts and source evidence needed for validation and project creation. It does not send original document bytes.
