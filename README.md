@@ -9,13 +9,13 @@ codex plugin marketplace add lesnicaaa/sunear-codex-marketplace --ref main
 codex plugin add sunear-designer@sunear
 ```
 
-Restart or open a new Codex task after installation. Codex will ask you to authorize the Sunear MCP connection in the browser. Approve the requested project and workflow permissions, then ask:
+Restart or open a new Codex task after installation. Codex will ask you to authorize the Sunear MCP connection in the browser. Approve the requested project and workflow permissions, then start the primary workflow in Chinese:
 
 ```text
-访问我最近更新的 Sunear 项目，并下载正式 PDF 报价单。
+我要上传 PDF 创建一个 Sunear 项目，逐项核对原图与 Engine 设计，再完成正式报价单。请全程使用中文。
 ```
 
-The plugin discovers projects in stable newest-first order, selects the first only when the request explicitly says so, and returns the generated quotation as a downloadable MCP resource. Its session hook starts the local execution receiver automatically; no project checkout, Node.js, Homebrew, or separate receiver command is required.
+The main workflow waits for the customer's PDF, creates the real project and verified Engine designs, then completes the market-backed quotation and returns it as a downloadable MCP resource. Accessing the newest existing project, re-exporting a document, or another focused operation remains a separate shortcut and runs only when explicitly requested. The session hook starts the local execution receiver automatically; no project checkout, Node.js, Homebrew, or separate receiver command is required.
 
 Supported receiver hosts: macOS Apple silicon and Intel, Linux ARM64 and x64, and Windows x64 (including Windows ARM64 through x64 emulation).
 

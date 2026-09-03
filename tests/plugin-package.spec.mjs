@@ -32,4 +32,13 @@ test("plugin owns the complete clean-host workflow", async () => {
     "bin/sunear-codex-receiver-linux-x64.gz",
     "bin/sunear-codex-receiver-windows-x64.exe.gz",
   ]) await access(path.join(plugin, relativePath));
+
+  for (const relativePath of [
+    "skills/sunear-create-design-from-pdf/SKILL.md",
+    "skills/sunear-create-quote-from-project/SKILL.md",
+  ]) {
+    const contents = await readFile(path.join(plugin, relativePath), "utf8");
+    assert.match(contents, /sunear\.agent-connection\/3/);
+    assert.match(contents, /Use Chinese for every user-visible progress update/);
+  }
 });
