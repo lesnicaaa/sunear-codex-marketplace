@@ -1,7 +1,7 @@
-export const RECEIVER_VERSION = "0.3.0";
+export const RECEIVER_VERSION = "0.5.0";
 export const RECEIVER_RUNTIME = "codex_app_server";
-export const EXECUTION_SCHEMA_VERSION = "sunear.agent-execution/1";
-export const SUPPORTED_COMMAND = "continue_project_workflow";
+export const EXECUTION_SCHEMA_VERSION = "sunear.agent-execution/3";
+export const SUPPORTED_COMMANDS = Object.freeze(["continue_project_workflow", "receiver_diagnostic"]);
 
 const ID_PATTERN = /^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$/;
 const REQUIRED_TOOLS = Object.freeze([
@@ -17,34 +17,49 @@ function requireId(value, field) {
   return value;
 }
 
-export function parseClaimedExecutionRequest(value) {
+export function parseClaimedExecutionRequest(value, expectedReceiverId) {
   if (!value || typeof value !== "object" || Array.isArray(value)) throw new Error("INVALID_EXECUTION_REQUEST");
   const keys = Object.keys(value).sort();
-  const allowedRequestKeys = ["command", "fencingToken", "leaseExpiresAt", "requestId"];
+  const allowedRequestKeys = ["command", "fencingToken", "leaseExpiresAt", "receiverId", "requestId"];
   if (keys.some((key) => !allowedRequestKeys.includes(key))) throw new Error("INVALID_EXECUTION_REQUEST_FIELD");
   if (!Number.isSafeInteger(value.fencingToken) || value.fencingToken < 1) throw new Error("INVALID_EXECUTION_REQUEST_FENCING_TOKEN");
   if (!value.command || typeof value.command !== "object" || Array.isArray(value.command)) throw new Error("INVALID_EXECUTION_REQUEST_COMMAND");
+  if (!SUPPORTED_COMMANDS.includes(value.command.type)) throw new Error("UNSUPPORTED_EXECUTION_COMMAND");
 
   const commandKeys = Object.keys(value.command).sort();
-  const allowedCommandKeys = ["projectId", "schemaVersion", "type"];
+  const allowedCommandKeys = value.command.type === "continue_project_workflow"
+    ? ["projectId", "schemaVersion", "type"]
+    : ["schemaVersion", "type"];
   if (commandKeys.some((key) => !allowedCommandKeys.includes(key))) throw new Error("INVALID_EXECUTION_REQUEST_COMMAND_FIELD");
   if (value.command.schemaVersion !== EXECUTION_SCHEMA_VERSION) throw new Error("UNSUPPORTED_EXECUTION_SCHEMA");
-  if (value.command.type !== SUPPORTED_COMMAND) throw new Error("UNSUPPORTED_EXECUTION_COMMAND");
   if (!Number.isSafeInteger(value.leaseExpiresAt) || value.leaseExpiresAt < 1) throw new Error("INVALID_EXECUTION_REQUEST_LEASE_EXPIRES_AT");
 
+  const receiverId = requireId(value.receiverId, "RECEIVER_ID");
+  if (expectedReceiverId && receiverId !== expectedReceiverId) throw new Error("INVALID_EXECUTION_REQUEST_RECEIVER_ID");
   return Object.freeze({
     requestId: requireId(value.requestId, "ID"),
+    receiverId,
     fencingToken: value.fencingToken,
     leaseExpiresAt: value.leaseExpiresAt,
-    command: Object.freeze({
+    command: Object.freeze(value.command.type === "continue_project_workflow" ? {
       schemaVersion: EXECUTION_SCHEMA_VERSION,
-      type: SUPPORTED_COMMAND,
+      type: "continue_project_workflow",
       projectId: requireId(value.command.projectId, "PROJECT_ID"),
+    } : {
+      schemaVersion: EXECUTION_SCHEMA_VERSION,
+      type: "receiver_diagnostic",
     }),
   });
 }
 
 export function buildExecutionPrompt(request) {
+  if (request.command.type === "receiver_diagnostic") return [
+    "这是一次 Sunear 接收器端到端诊断。",
+    `请求编号：${request.requestId}`,
+    "不要调用任何工具，不要读取或修改任何项目、文件、账户或外部数据。",
+    "请原创一则简短的中文哲学故事，包含标题与正文，总长度不超过 500 个汉字。",
+    "只输出故事本身，不解释测试过程。",
+  ].join("\n");
   return [
     "Execute one claimed Sunear Web execution request.",
     `Request ID: ${request.requestId}`,

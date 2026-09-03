@@ -1,4 +1,3 @@
-import os from "node:os";
 import { CodexAppServerClient } from "./codex-app-server-client.mjs";
 import {
   RECEIVER_RUNTIME,
@@ -32,6 +31,7 @@ function errorCode(error) {
   if (message.startsWith("SUNEAR_MCP_NOT_AUTHENTICATED")) return "SUNEAR_MCP_NOT_AUTHENTICATED";
   if (message.startsWith("SUNEAR_RECEIVER_TOOLS_MISSING")) return "SUNEAR_RECEIVER_TOOLS_MISSING";
   if (message.startsWith("CODEX_APP_SERVER")) return "CODEX_APP_SERVER_ERROR";
+  if (message.startsWith("CODEX_DIAGNOSTIC_RESULT_MISSING")) return "CODEX_DIAGNOSTIC_RESULT_MISSING";
   return "CODEX_EXECUTION_FAILED";
 }
 
@@ -60,12 +60,22 @@ export class SunearCodexReceiver {
    *   claimRenewalMs?: number,
    *   sleep?: (milliseconds: number) => Promise<void>,
    *   now?: () => number,
-   *   hostName?: () => string,
+   *   receiverId: string,
+   *   deviceId: string,
+   *   deviceName: string,
+   *   agentName: string,
+   *   agentKind: "codex_desktop" | "codex_cli",
    *   logger?: Pick<Console, "error">,
    *   onStatusChange?: (status: "ready" | "degraded" | "stopped") => void,
+   *   onBrowserPairingUrl?: (url: string) => Promise<void> | void,
    * }} [options]
    */
   constructor({
+    receiverId,
+    deviceId,
+    deviceName,
+    agentName,
+    agentKind,
     cwd = process.cwd(),
     client,
     heartbeatMs = DEFAULT_HEARTBEAT_MS,
@@ -74,10 +84,19 @@ export class SunearCodexReceiver {
     claimRenewalMs = CLAIM_RENEWAL_MS,
     sleep = delay,
     now = Date.now,
-    hostName = os.hostname,
     logger = console,
     onStatusChange = () => {},
+    onBrowserPairingUrl = () => {},
   } = {}) {
+    if (typeof receiverId !== "string" || !receiverId) throw new Error("SUNEAR_RECEIVER_ID_REQUIRED");
+    if (typeof deviceId !== "string" || !deviceId) throw new Error("SUNEAR_DEVICE_ID_REQUIRED");
+    if (typeof deviceName !== "string" || !deviceName) throw new Error("SUNEAR_RECEIVER_DEVICE_NAME_REQUIRED");
+    if (typeof agentName !== "string" || !agentName) throw new Error("SUNEAR_RECEIVER_AGENT_NAME_REQUIRED");
+    this.receiverId = receiverId;
+    this.deviceId = deviceId;
+    this.deviceName = deviceName;
+    this.agentName = agentName;
+    this.agentKind = agentKind;
     this.cwd = cwd;
     this.client = client ?? new CodexAppServerClient({
       cwd,
@@ -89,9 +108,10 @@ export class SunearCodexReceiver {
     this.claimRenewalMs = claimRenewalMs;
     this.sleep = sleep;
     this.now = now;
-    this.hostName = hostName;
     this.logger = logger;
     this.onStatusChange = onStatusChange;
+    this.onBrowserPairingUrl = onBrowserPairingUrl;
+    this.browserPairingOpened = false;
     this.controlThreadId = null;
     this.lastHeartbeatAt = 0;
     this.stopping = false;
@@ -114,7 +134,7 @@ export class SunearCodexReceiver {
     this.controlThreadId = await this.startThread();
     await this.waitForReceiverTools(this.controlThreadId);
     await callSunearTool(this.client, this.controlThreadId, "workflow_context", {
-      agentWorkId: `sunear-receiver:${this.hostName()}`,
+      agentWorkId: `sunear-receiver:${this.receiverId}`,
     });
     await this.report("ready");
     return this.controlThreadId;
@@ -156,12 +176,22 @@ export class SunearCodexReceiver {
   async report(status, timeoutMs) {
     if (!this.controlThreadId) throw new Error("SUNEAR_RECEIVER_NOT_INITIALIZED");
     const response = await callSunearTool(this.client, this.controlThreadId, "report_agent_execution_receiver", {
+      receiverId: this.receiverId,
+      deviceId: this.deviceId,
+      deviceName: this.deviceName,
+      agentName: this.agentName,
+      agentKind: this.agentKind,
       runtime: RECEIVER_RUNTIME,
       status,
       version: RECEIVER_VERSION,
     }, timeoutMs);
     this.lastHeartbeatAt = this.now();
     this.setStatus(status);
+    if (!this.browserPairingOpened && typeof response.browserPairingUrl === "string") {
+      this.browserPairingOpened = true;
+      try { await this.onBrowserPairingUrl(response.browserPairingUrl); }
+      catch (error) { this.logger.error(`SUNEAR_BROWSER_PAIRING_OPEN_FAILED: ${error instanceof Error ? error.message : String(error)}`); }
+    }
     return response;
   }
 
@@ -181,13 +211,13 @@ export class SunearCodexReceiver {
   async pollOnce() {
     if (!this.controlThreadId) throw new Error("SUNEAR_RECEIVER_NOT_INITIALIZED");
     await this.heartbeatIfDue();
-    const response = await callSunearTool(this.client, this.controlThreadId, "get_agent_execution_request");
+    const response = await callSunearTool(this.client, this.controlThreadId, "get_agent_execution_request", { receiverId: this.receiverId });
     if (!response.request) return null;
 
     const identity = claimIdentity(response.request);
     let request;
     try {
-      request = parseClaimedExecutionRequest(response.request);
+      request = parseClaimedExecutionRequest(response.request, this.receiverId);
     } catch (error) {
       if (identity) await this.finishFailure(identity, error);
       throw error;
@@ -199,13 +229,14 @@ export class SunearCodexReceiver {
       throw error;
     }
 
+    let resultText;
     try {
-      await this.execute(request);
+      resultText = await this.execute(request);
     } catch (error) {
       await this.finishFailure(request, error);
       throw error;
     }
-    await this.finish(request, "completed");
+    await this.finish(request, "completed", undefined, resultText);
     return request;
   }
 
@@ -222,6 +253,13 @@ export class SunearCodexReceiver {
     let renewalTimer;
     let rejectRenewal;
     let renewalInFlight = false;
+    let finalMessage = "";
+    const unsubscribe = this.client.subscribeNotifications((message) => {
+      const item = message?.method === "item/completed" ? message.params?.item : null;
+      if (message.params?.threadId === threadId && item?.type === "agentMessage" && (!item.phase || item.phase === "final_answer") && typeof item.text === "string") {
+        finalMessage = item.text.trim();
+      }
+    });
     const renewalFailure = new Promise((_, reject) => { rejectRenewal = reject; });
     const renew = async () => {
       if (renewalInFlight || turnFinished) return;
@@ -229,6 +267,7 @@ export class SunearCodexReceiver {
       try {
         const response = await callSunearTool(this.client, this.controlThreadId, "renew_agent_execution_request", {
           requestId: request.requestId,
+          receiverId: this.receiverId,
           fencingToken: request.fencingToken,
         }, HEARTBEAT_REQUEST_TIMEOUT_MS);
         if (!response.request) throw new Error("EXECUTION_REQUEST_CLAIM_LOST");
@@ -252,6 +291,8 @@ export class SunearCodexReceiver {
       turnFinished = true;
       const status = notification.params?.turn?.status;
       if (status !== "completed") throw new Error(`CODEX_TURN_${String(status ?? "UNKNOWN").toUpperCase()}`);
+      if (request.command.type === "receiver_diagnostic" && !finalMessage) throw new Error("CODEX_DIAGNOSTIC_RESULT_MISSING");
+      return request.command.type === "receiver_diagnostic" ? finalMessage : undefined;
     } catch (error) {
       completed.cancel();
       if (turnId && !turnFinished) {
@@ -265,16 +306,19 @@ export class SunearCodexReceiver {
       }
       throw error;
     } finally {
+      unsubscribe();
       if (renewalTimer) clearInterval(renewalTimer);
     }
   }
 
-  async finish(request, outcome, failureCode) {
+  async finish(request, outcome, failureCode, resultText) {
     await callSunearTool(this.client, this.controlThreadId, "finish_agent_execution_request", {
       requestId: request.requestId,
+      receiverId: this.receiverId,
       fencingToken: request.fencingToken,
       outcome,
       ...(failureCode ? { errorCode: failureCode } : {}),
+      ...(resultText ? { resultText } : {}),
     });
   }
 

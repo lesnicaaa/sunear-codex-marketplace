@@ -12,7 +12,7 @@ case "${platform}:${architecture}" in
 esac
 
 install_dir="${PLUGIN_DATA}/bin"
-executable="${install_dir}/sunear-codex-receiver-0.3.0"
+executable="${install_dir}/sunear-codex-receiver-0.5.0"
 if [ ! -x "${executable}" ]; then
   mkdir -p "${install_dir}"
   temporary="${executable}.tmp.$$"

@@ -9,6 +9,7 @@ import os from "node:os";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { RECEIVER_VERSION } from "./lib/sunear-codex-receiver-core.mjs";
+import { readOrCreateReceiverIdentity } from "./lib/sunear-codex-receiver-identity.mjs";
 import { SunearCodexReceiver } from "./lib/sunear-codex-receiver.mjs";
 
 const scriptPath = fileURLToPath(import.meta.url);
@@ -106,6 +107,16 @@ function launchDaemon({ cwd, dataDirectory, sessionId }) {
   closeSync(logDescriptor);
 }
 
+function openBrowserPairingUrl(url) {
+  return new Promise((resolvePromise, reject) => {
+    const command = process.platform === "darwin" ? "open" : process.platform === "win32" ? "cmd" : "xdg-open";
+    const args = process.platform === "win32" ? ["/c", "start", "", url] : [url];
+    const child = spawn(command, args, { detached: true, stdio: "ignore" });
+    child.once("error", reject);
+    child.once("spawn", () => { child.unref(); resolvePromise(); });
+  });
+}
+
 function acquireDaemonLock(lockPath) {
   for (let attempt = 0; attempt < 3; attempt += 1) {
     try {
@@ -148,7 +159,7 @@ async function startSession(socketPath, sessionId, cwd, dataDirectory) {
   return sendControl(socketPath, { command: "session-start", sessionId });
 }
 
-async function runDaemon({ socketPath, lockPath, cwd, dataDirectory, initialSessionId }) {
+async function runDaemon({ socketPath, lockPath, cwd, dataDirectory, initialSessionId, receiverIdentity }) {
   mkdirSync(dataDirectory, { recursive: true, mode: 0o700 });
   const lock = acquireDaemonLock(lockPath);
   if (!lock) return;
@@ -222,8 +233,10 @@ async function runDaemon({ socketPath, lockPath, cwd, dataDirectory, initialSess
       receiverState = "starting";
       const receiver = new SunearCodexReceiver({
         cwd,
+        ...receiverIdentity,
         logger: { error: (message) => process.stderr.write(`[receiver] ${message}\n`) },
         onStatusChange: (status) => { receiverState = status; },
+        onBrowserPairingUrl: openBrowserPairingUrl,
       });
       activeReceiver = receiver;
       try {
@@ -252,16 +265,18 @@ async function main() {
   if (process.env.SUNEAR_RECEIVER_CHILD === "1" && (command === "session-start" || command === "session-end")) return;
   const hook = command === "session-start" || command === "session-end" ? await readHookInput() : {};
   const dataDirectory = resolve(flag("--data-dir", process.env.PLUGIN_DATA ?? resolve(dirname(scriptPath), ".data")));
+  const receiverIdentity = await readOrCreateReceiverIdentity(dataDirectory);
   const cwd = resolve(flag("--cwd", hook.cwd ?? process.cwd()));
   const sessionId = flag("--session", hook.session_id);
   const initialSessionId = flag("--initial-session");
-  const socketPath = receiverSocketPath(RECEIVER_INSTANCE_ID);
-  const lockPath = receiverLockPath(RECEIVER_INSTANCE_ID);
+  const receiverInstanceId = `${RECEIVER_INSTANCE_ID}:${receiverIdentity.agentKind}`;
+  const socketPath = receiverSocketPath(receiverInstanceId);
+  const lockPath = receiverLockPath(receiverInstanceId);
 
   try {
     if (command === "daemon") {
       if (typeof initialSessionId !== "string" || !initialSessionId) throw new Error("SUNEAR_RECEIVER_SESSION_ID_REQUIRED");
-      await runDaemon({ socketPath, lockPath, cwd, dataDirectory, initialSessionId });
+      await runDaemon({ socketPath, lockPath, cwd, dataDirectory, initialSessionId, receiverIdentity });
     }
     else if (command === "session-start") {
       if (typeof sessionId !== "string" || !sessionId) throw new Error("SUNEAR_RECEIVER_SESSION_ID_REQUIRED");

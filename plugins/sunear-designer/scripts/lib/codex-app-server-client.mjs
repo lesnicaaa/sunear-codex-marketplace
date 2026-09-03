@@ -39,6 +39,7 @@ export class CodexAppServerClient {
     this.nextRequestId = 1;
     this.pending = new Map();
     this.notificationWaiters = new Set();
+    this.notificationListeners = new Set();
     this.process = null;
     this.closed = false;
   }
@@ -107,6 +108,11 @@ export class CodexAppServerClient {
     };
   }
 
+  subscribeNotifications(listener) {
+    this.notificationListeners.add(listener);
+    return () => this.notificationListeners.delete(listener);
+  }
+
   handleLine(line) {
     let message;
     try {
@@ -137,6 +143,7 @@ export class CodexAppServerClient {
     }
 
     if (typeof message.method !== "string") return;
+    for (const listener of this.notificationListeners) listener(message);
     for (const waiter of this.notificationWaiters) {
       if (!waiter.predicate(message)) continue;
       clearTimeout(waiter.timer);
@@ -170,5 +177,6 @@ export class CodexAppServerClient {
       waiter.reject(error);
     }
     this.notificationWaiters.clear();
+    this.notificationListeners.clear();
   }
 }
