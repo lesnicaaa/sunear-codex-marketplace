@@ -1,20 +1,41 @@
 {
   "name": "sunear-designer",
-  "version": "0.1.0",
-  "description": "Create reviewable Sunear door and window projects from local documents.",
-  "author": { "name": "Sunear", "url": "https://github.com/lesnicaaa" },
+  "version": "0.3.0+codex.20260903033220",
+  "description": "Create evidence-backed Sunear designs and download formal quotations through the deployed MCP workflow.",
+  "author": {
+    "name": "Sunear",
+    "url": "https://github.com/lesnicaaa"
+  },
   "homepage": "https://github.com/lesnicaaa/sunear-codex-marketplace",
   "repository": "https://github.com/lesnicaaa/sunear-codex-marketplace",
   "license": "MIT",
-  "keywords": ["sunear", "doors", "windows", "design"],
+  "keywords": [
+    "sunear",
+    "doors",
+    "windows",
+    "design",
+    "quotation"
+  ],
+  "skills": "./skills/",
+  "mcpServers": "./.mcp.json",
   "interface": {
     "displayName": "Sunear Designer",
-    "shortDescription": "Create reviewable door and window projects.",
-    "longDescription": "Turn locally read project documents into bounded facts for an authenticated Sunear project workflow.",
+    "shortDescription": "Create verified designs and formal quotations.",
+    "longDescription": "Create evidence-backed Sunear projects, access existing projects, complete the commercial workflow, and download formal PDF or XLSX quotations.",
     "developerName": "Sunear",
     "category": "Productivity",
-    "capabilities": ["Read", "Write"],
-    "websiteURL": "https://github.com/lesnicaaa/sunear-codex-marketplace",
-    "privacyPolicyURL": "https://github.com/lesnicaaa/sunear-codex-marketplace/blob/main/PRIVACY.md"
+    "capabilities": [
+      "Read",
+      "Write"
+    ],
+    "websiteURL": "https://stage.sunearbuild.com",
+    "privacyPolicyURL": "https://github.com/lesnicaaa/sunear-codex-marketplace/blob/main/PRIVACY.md",
+    "brandColor": "#F6D54A",
+    "composerIcon": "./assets/icon.svg",
+    "logo": "./assets/icon.svg",
+    "defaultPrompt": [
+      "\u8bbf\u95ee\u6211\u6700\u8fd1\u66f4\u65b0\u7684 Sunear \u9879\u76ee\uff0c\u5e76\u4e0b\u8f7d\u6b63\u5f0f PDF \u62a5\u4ef7\u5355\u3002",
+      "\u7528\u5168\u90e8\u56fe\u7eb8\u521b\u5efa\u4e00\u4e2a Sunear \u9879\u76ee\uff0c\u5e76\u9010\u9879\u590d\u6838\u539f\u56fe\u88c1\u526a\u4e0e Engine \u7ed8\u56fe\u3002"
+    ]
   }
 }

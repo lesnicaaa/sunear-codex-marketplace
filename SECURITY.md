@@ -2,7 +2,7 @@
 
 ## Access credentials
 
-Using the Sunear service requires an invite and an organization key issued by a Sunear administrator. Store the key only in `SUNEAR_AGENT_API_KEY`. Never place it in a prompt, document, command argument, URL, log, issue, screenshot, or source file.
+Using the Sunear service requires an invited account and OAuth consent in the browser opened by Codex. Do not copy access or refresh tokens into prompts, documents, command arguments, URLs, logs, issues, screenshots, or source files. Revoke the Codex connection from the Sunear account page after suspected account or device exposure.
 
 Review Links grant access to a project. Treat the complete link, including any fragment or access token, as a secret. Send it only to the intended reviewer through a private channel. Redact it from logs and reports. Ask a Sunear administrator to rotate access after suspected disclosure.
 

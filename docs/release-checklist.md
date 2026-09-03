@@ -13,17 +13,15 @@ Do not create or push a tag until every required check below passes. Record the 
 
 ## Installation and staging
 
-- [ ] `npm run smoke:install` installs the local marketplace and plugin using a disposable `CODEX_HOME` and discovers `create-sunear-design-from-pdf`.
-- [ ] The no-key run prints the documented missing-key rejection and an explicit authenticated `SKIP`, not a pass.
-- [ ] With `SUNEAR_STAGING_AGENT_KEY` and `SUNEAR_STAGING_BASE_URL`, the smoke passes capabilities, validate, create, read, revise, and Review Link shape checks.
-- [ ] Smoke output contains neither the organization key nor a complete Review Link or `rvw_` token.
-- [ ] Reusing the initially issued Review Link succeeds before rotation.
-- [ ] Explicit Review Link rotation issues a different link, invalidates the old link, and the replacement succeeds.
-- [ ] The staging smoke project is identified for cleanup according to the staging retention policy.
+- [ ] `npm run smoke:install` installs the local marketplace and plugin using a disposable `CODEX_HOME`, discovers both current skills, and verifies MCP, hooks, launchers, and every receiver archive.
+- [ ] On a clean supported host, start a new Codex task and verify OAuth opens without manually editing MCP configuration.
+- [ ] Approve the requested Sunear permissions and verify `list_projects` returns projects in stable newest-first order.
+- [ ] Ask Codex to access the first project and download a formal PDF quotation; verify the response contains a downloadable PDF resource.
+- [ ] Verify the receiver reports ready without a repository checkout, Node.js, Homebrew, or a separate receiver command.
 
 ## Publication
 
 - [ ] The destination is the public `sunear-codex-marketplace` repository, not the private application repository.
 - [ ] The archive checksum and exact inventory are attached to release review evidence.
-- [ ] Release approval is recorded before creating `v0.1.0`.
-- [ ] After publication, repeat installation and both missing-key and authenticated smoke checks from the public Git source.
+- [ ] Release approval is recorded before creating the release tag.
+- [ ] After publication, repeat clean-profile installation, OAuth, project discovery, and quotation download from the public Git source.

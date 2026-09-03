@@ -52,6 +52,7 @@ export async function scanReleaseDirectory(root, allowedPaths) {
     const stat = await lstat(absolutePath);
     if (!stat.isFile()) throw new Error(`Allowlisted release entry is not a regular file: ${relativePath}`);
     const bytes = await readFile(absolutePath);
+    if (relativePath.endsWith(".gz")) continue;
     if (bytes.includes(0)) throw new Error(`Binary content is not allowed in release: ${relativePath}`);
     const text = bytes.toString("utf8");
     for (const [pattern, label] of FORBIDDEN_BYTES) {

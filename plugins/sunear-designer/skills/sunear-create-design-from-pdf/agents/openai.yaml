@@ -1,0 +1,11 @@
+interface:
+  display_name: "Create Sunear Design"
+  short_description: "Turn source drawings into Engine v3 project designs"
+  default_prompt: "Use $sunear-create-design-from-pdf to create a reviewable Sunear project from these source drawings."
+dependencies:
+  tools:
+    - type: "mcp"
+      value: "sunear"
+      description: "Authenticated Sunear project and Engine workflow"
+      transport: "streamable_http"
+      url: "https://stage.sunearbuild.com/api/mcp"

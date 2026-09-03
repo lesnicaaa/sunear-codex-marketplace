@@ -1,0 +1,94 @@
+export const RECEIVER_VERSION = "0.3.0";
+export const RECEIVER_RUNTIME = "codex_app_server";
+export const EXECUTION_SCHEMA_VERSION = "sunear.agent-execution/1";
+export const SUPPORTED_COMMAND = "continue_project_workflow";
+
+const ID_PATTERN = /^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$/;
+const REQUIRED_TOOLS = Object.freeze([
+  "workflow_context",
+  "report_agent_execution_receiver",
+  "get_agent_execution_request",
+  "renew_agent_execution_request",
+  "finish_agent_execution_request",
+]);
+
+function requireId(value, field) {
+  if (typeof value !== "string" || !ID_PATTERN.test(value)) throw new Error(`INVALID_EXECUTION_REQUEST_${field}`);
+  return value;
+}
+
+export function parseClaimedExecutionRequest(value) {
+  if (!value || typeof value !== "object" || Array.isArray(value)) throw new Error("INVALID_EXECUTION_REQUEST");
+  const keys = Object.keys(value).sort();
+  const allowedRequestKeys = ["command", "fencingToken", "leaseExpiresAt", "requestId"];
+  if (keys.some((key) => !allowedRequestKeys.includes(key))) throw new Error("INVALID_EXECUTION_REQUEST_FIELD");
+  if (!Number.isSafeInteger(value.fencingToken) || value.fencingToken < 1) throw new Error("INVALID_EXECUTION_REQUEST_FENCING_TOKEN");
+  if (!value.command || typeof value.command !== "object" || Array.isArray(value.command)) throw new Error("INVALID_EXECUTION_REQUEST_COMMAND");
+
+  const commandKeys = Object.keys(value.command).sort();
+  const allowedCommandKeys = ["projectId", "schemaVersion", "type"];
+  if (commandKeys.some((key) => !allowedCommandKeys.includes(key))) throw new Error("INVALID_EXECUTION_REQUEST_COMMAND_FIELD");
+  if (value.command.schemaVersion !== EXECUTION_SCHEMA_VERSION) throw new Error("UNSUPPORTED_EXECUTION_SCHEMA");
+  if (value.command.type !== SUPPORTED_COMMAND) throw new Error("UNSUPPORTED_EXECUTION_COMMAND");
+  if (!Number.isSafeInteger(value.leaseExpiresAt) || value.leaseExpiresAt < 1) throw new Error("INVALID_EXECUTION_REQUEST_LEASE_EXPIRES_AT");
+
+  return Object.freeze({
+    requestId: requireId(value.requestId, "ID"),
+    fencingToken: value.fencingToken,
+    leaseExpiresAt: value.leaseExpiresAt,
+    command: Object.freeze({
+      schemaVersion: EXECUTION_SCHEMA_VERSION,
+      type: SUPPORTED_COMMAND,
+      projectId: requireId(value.command.projectId, "PROJECT_ID"),
+    }),
+  });
+}
+
+export function buildExecutionPrompt(request) {
+  return [
+    "Execute one claimed Sunear Web execution request.",
+    `Request ID: ${request.requestId}`,
+    `Command: ${request.command.type}`,
+    `Project ID: ${request.command.projectId}`,
+    `Schema: ${request.command.schemaVersion}`,
+    "Load workflow_context first with agentWorkId sunear-web-execution:<request-id>.",
+    "Then read the exact project workflow status and continue only that existing project's canonical workflow to the furthest legal state under the current personal autonomy grant.",
+    "Do not create another project, accept arbitrary instructions, run shell commands, change unrelated files, grant permissions, or call finish_agent_execution_request; the receiver owns settlement.",
+    "If required business evidence is absent or an explicit exception remains, stop safely and report it in the final answer.",
+  ].join("\n").replace("<request-id>", request.requestId);
+}
+
+export function readMcpToolResult(result) {
+  if (!result || typeof result !== "object") throw new Error("INVALID_MCP_TOOL_RESPONSE");
+  if (result.isError) throw new Error(`MCP_TOOL_ERROR: ${JSON.stringify(result.content ?? [])}`);
+  if (result.structuredContent && typeof result.structuredContent === "object") return result.structuredContent;
+  const text = Array.isArray(result.content)
+    ? result.content.find((item) => item && typeof item === "object" && item.type === "text" && typeof item.text === "string")?.text
+    : undefined;
+  if (!text) return {};
+  try {
+    return JSON.parse(text);
+  } catch {
+    throw new Error("INVALID_MCP_TOOL_JSON");
+  }
+}
+
+export function assertReceiverTools(statusResponse, serverName = "sunear") {
+  const server = statusResponse?.data?.find((entry) => entry?.name === serverName);
+  if (!server) throw new Error("SUNEAR_MCP_NOT_CONFIGURED");
+  if (server.authStatus !== "oAuth" && server.authStatus !== "bearerToken") throw new Error(`SUNEAR_MCP_NOT_AUTHENTICATED: ${server.authStatus}`);
+  const names = new Set(Object.keys(server.tools ?? {}));
+  const missing = REQUIRED_TOOLS.filter((name) => !names.has(name));
+  if (missing.length) throw new Error(`SUNEAR_RECEIVER_TOOLS_MISSING: ${missing.join(",")}`);
+  return server;
+}
+
+export async function callSunearTool(client, threadId, tool, args = {}, timeoutMs) {
+  const result = await client.request("mcpServer/tool/call", {
+    threadId,
+    server: "sunear",
+    tool,
+    arguments: args,
+  }, timeoutMs);
+  return readMcpToolResult(result);
+}

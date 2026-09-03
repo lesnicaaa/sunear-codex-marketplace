@@ -1,0 +1,9 @@
+{
+  "mcpServers": {
+    "sunear": {
+      "type": "http",
+      "url": "https://stage.sunearbuild.com/api/mcp",
+      "oauth_resource": "https://stage.sunearbuild.com/api/mcp"
+    }
+  }
+}

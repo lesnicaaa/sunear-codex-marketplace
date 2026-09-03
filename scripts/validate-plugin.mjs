@@ -15,8 +15,22 @@ const plugin = await readJson("plugins/sunear-designer/.codex-plugin/plugin.json
 
 assert.equal(marketplace.name, "sunear");
 assert.equal(plugin.name, "sunear-designer");
-assert.equal(plugin.version, "0.1.0");
 assert.match(plugin.version, /^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-[0-9A-Za-z.-]+)?(?:\+[0-9A-Za-z.-]+)?$/);
+assert.equal(plugin.skills, "./skills/");
+assert.equal(plugin.mcpServers, "./.mcp.json");
+
+const mcp = await readJson("plugins/sunear-designer/.mcp.json");
+assert.equal(mcp.mcpServers?.sunear?.url, "https://stage.sunearbuild.com/api/mcp");
+assert.equal(mcp.mcpServers?.sunear?.oauth_resource, mcp.mcpServers.sunear.url);
+
+for (const skill of ["sunear-create-design-from-pdf", "sunear-create-quote-from-project"]) {
+  const contents = await readFile(path.join(root, "plugins/sunear-designer/skills", skill, "SKILL.md"), "utf8");
+  assert.ok(contents.trim(), `${skill} must be packaged`);
+}
+
+const hooks = await readJson("plugins/sunear-designer/hooks/hooks.json");
+assert.match(hooks.hooks?.SessionStart?.[0]?.hooks?.[0]?.command ?? "", /sunear-codex-receiver-launch\.sh/);
+assert.match(hooks.hooks?.SessionStart?.[0]?.hooks?.[0]?.commandWindows ?? "", /sunear-codex-receiver-launch\.ps1/);
 
 const entry = marketplace.plugins?.find(({ name }) => name === "sunear-designer");
 assert.ok(entry, "marketplace must list sunear-designer");

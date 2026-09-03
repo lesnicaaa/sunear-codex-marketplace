@@ -1,0 +1,11 @@
+interface:
+  display_name: "Create Sunear Quote"
+  short_description: "Price a confirmed project and deliver its quotation"
+  default_prompt: "Use $sunear-create-quote-from-project to create a quotation from this confirmed Sunear project."
+dependencies:
+  tools:
+    - type: "mcp"
+      value: "sunear"
+      description: "Authenticated Sunear commercial and translation workflow"
+      transport: "streamable_http"
+      url: "https://stage.sunearbuild.com/api/mcp"

@@ -1,0 +1,11 @@
+<svg width="512" height="512" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="512" height="512" rx="48" fill="#F6D54A"/>
+  <defs>
+    <clipPath id="upper-half"><rect x="0" y="0" width="512" height="251"/></clipPath>
+    <clipPath id="lower-half"><rect x="0" y="261" width="512" height="251"/></clipPath>
+  </defs>
+  <g transform="translate(256 256) scale(1.12) rotate(-15) translate(-256 -256)">
+    <path d="M320 150H200C160 150 140 180 140 210C140 240 160 260 200 260H300C340 260 360 290 360 320" stroke="#101B16" stroke-width="64" stroke-linecap="round" stroke-linejoin="round" clip-path="url(#upper-half)"/>
+    <path d="M192 362H312C352 362 372 332 372 302C372 272 352 252 312 252H212C172 252 152 222 152 192" transform="translate(-22 0)" stroke="#FFFFFF" stroke-width="64" stroke-linecap="round" stroke-linejoin="round" clip-path="url(#lower-half)"/>
+  </g>
+</svg>
