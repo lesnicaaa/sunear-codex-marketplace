@@ -56,16 +56,21 @@ function flag(name, fallback = undefined) {
   return index >= 0 && process.argv[index + 1] ? process.argv[index + 1] : fallback;
 }
 
-export function receiverSocketPath(instanceId = RECEIVER_INSTANCE_ID, platform = process.platform, temporaryDirectory = os.tmpdir(), userIdentity = os.userInfo().username) {
+function stableControlDirectory(platform, temporaryDirectory) {
+  if (temporaryDirectory) return temporaryDirectory;
+  return platform === "win32" ? os.tmpdir() : "/tmp";
+}
+
+export function receiverSocketPath(instanceId = RECEIVER_INSTANCE_ID, platform = process.platform, temporaryDirectory, userIdentity = os.userInfo().username) {
   const digest = receiverInstanceDigest(instanceId, userIdentity);
   if (platform === "win32") {
     return `\\\\.\\pipe\\sunear-codex-receiver-${digest}`;
   }
-  return resolve(temporaryDirectory, `sunear-receiver-${process.getuid?.() ?? "user"}-${digest.slice(0, 12)}.sock`);
+  return resolve(stableControlDirectory(platform, temporaryDirectory), `sunear-receiver-${process.getuid?.() ?? "user"}-${digest.slice(0, 12)}.sock`);
 }
 
-export function receiverLockPath(instanceId = RECEIVER_INSTANCE_ID, temporaryDirectory = os.tmpdir(), userIdentity = os.userInfo().username) {
-  return resolve(temporaryDirectory, `sunear-receiver-${process.getuid?.() ?? "user"}-${receiverInstanceDigest(instanceId, userIdentity).slice(0, 12)}.lock`);
+export function receiverLockPath(instanceId = RECEIVER_INSTANCE_ID, temporaryDirectory, userIdentity = os.userInfo().username) {
+  return resolve(stableControlDirectory(process.platform, temporaryDirectory), `sunear-receiver-${process.getuid?.() ?? "user"}-${receiverInstanceDigest(instanceId, userIdentity).slice(0, 12)}.lock`);
 }
 
 async function readHookInput() {

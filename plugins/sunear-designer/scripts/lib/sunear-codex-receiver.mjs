@@ -1,4 +1,4 @@
-import { CodexAppServerClient } from "./codex-app-server-client.mjs";
+import { CodexAppServerClient, resolveCodexExecutable } from "./codex-app-server-client.mjs";
 import {
   RECEIVER_RUNTIME,
   RECEIVER_VERSION,
@@ -21,7 +21,7 @@ function delay(milliseconds) {
   return new Promise((resolve) => setTimeout(resolve, milliseconds));
 }
 
-function errorCode(error) {
+export function receiverErrorCode(error) {
   const message = error instanceof Error ? error.message : String(error);
   if (message.startsWith("UNSUPPORTED_EXECUTION_SCHEMA")) return "UNSUPPORTED_EXECUTION_SCHEMA";
   if (message.startsWith("UNSUPPORTED_EXECUTION_COMMAND")) return "UNSUPPORTED_EXECUTION_COMMAND";
@@ -32,7 +32,38 @@ function errorCode(error) {
   if (message.startsWith("SUNEAR_RECEIVER_TOOLS_MISSING")) return "SUNEAR_RECEIVER_TOOLS_MISSING";
   if (message.startsWith("CODEX_APP_SERVER")) return "CODEX_APP_SERVER_ERROR";
   if (message.startsWith("CODEX_DIAGNOSTIC_RESULT_MISSING")) return "CODEX_DIAGNOSTIC_RESULT_MISSING";
+  if (message.startsWith("CODEX_TURN_USAGE_LIMIT_EXCEEDED")) return "CODEX_USAGE_LIMIT_EXCEEDED";
+  if (message.startsWith("CODEX_TURN_SESSION_BUDGET_EXCEEDED")) return "CODEX_SESSION_BUDGET_EXCEEDED";
+  if (message.startsWith("CODEX_TURN_UNAUTHORIZED")) return "CODEX_UNAUTHORIZED";
+  if (message.startsWith("CODEX_TURN_SANDBOX_ERROR")) return "CODEX_SANDBOX_ERROR";
+  if (message.startsWith("CODEX_TURN_SERVER_OVERLOADED")) return "CODEX_SERVER_OVERLOADED";
+  if (message.startsWith("CODEX_TURN_INTERNAL_SERVER_ERROR")) return "CODEX_INTERNAL_SERVER_ERROR";
+  if (message.startsWith("CODEX_TURN_INTERRUPTED")) return "CODEX_TURN_INTERRUPTED";
+  if (message.startsWith("CODEX_TURN_FAILED")) return "CODEX_TURN_FAILED";
   return "CODEX_EXECUTION_FAILED";
+}
+
+function codexErrorName(value) {
+  if (typeof value === "string") return value;
+  if (value && typeof value === "object") return Object.keys(value)[0] ?? "unknown";
+  return "unknown";
+}
+
+function turnFailureError(turn) {
+  const status = String(turn?.status ?? "unknown");
+  if (status === "interrupted") return new Error("CODEX_TURN_INTERRUPTED");
+  if (status !== "failed") return new Error(`CODEX_TURN_${status.toUpperCase()}`);
+  const codexError = codexErrorName(turn?.error?.codexErrorInfo)
+    .replace(/([a-z0-9])([A-Z])/g, "$1_$2")
+    .toUpperCase();
+  return new Error(codexError === "UNKNOWN" ? "CODEX_TURN_FAILED" : `CODEX_TURN_${codexError}`);
+}
+
+function finalAgentMessage(turn) {
+  if (!Array.isArray(turn?.items)) return "";
+  return turn.items.reduce((result, item) => item?.type === "agentMessage"
+    && (!item.phase || item.phase === "final_answer") && typeof item.text === "string" && item.text.trim()
+    ? item.text.trim() : result, "");
 }
 
 function claimIdentity(value) {
@@ -111,6 +142,7 @@ export class SunearCodexReceiver {
     this.pluginVersion = pluginVersion;
     this.cwd = cwd;
     this.client = client ?? new CodexAppServerClient({
+      command: resolveCodexExecutable({ agentKind }),
       cwd,
       environment: { ...process.env, SUNEAR_RECEIVER_CHILD: "1" },
     });
@@ -304,8 +336,10 @@ export class SunearCodexReceiver {
       renewalTimer = setInterval(() => void renew().catch(rejectRenewal), this.claimRenewalMs);
       const notification = await Promise.race([completed.promise, renewalFailure]);
       turnFinished = true;
-      const status = notification.params?.turn?.status;
-      if (status !== "completed") throw new Error(`CODEX_TURN_${String(status ?? "UNKNOWN").toUpperCase()}`);
+      const completedTurn = notification.params?.turn;
+      const status = completedTurn?.status;
+      if (status !== "completed") throw turnFailureError(completedTurn);
+      finalMessage ||= finalAgentMessage(completedTurn);
       if (request.command.type === "receiver_diagnostic" && !finalMessage) throw new Error("CODEX_DIAGNOSTIC_RESULT_MISSING");
       return request.command.type === "receiver_diagnostic" ? finalMessage : undefined;
     } catch (error) {
@@ -338,7 +372,7 @@ export class SunearCodexReceiver {
   }
 
   async finishFailure(request, executionError) {
-    try { await this.finish(request, "failed", errorCode(executionError)); }
+    try { await this.finish(request, "failed", receiverErrorCode(executionError)); }
     catch (settlementError) {
       this.logger.error(`SUNEAR_EXECUTION_SETTLEMENT_FAILED: ${settlementError instanceof Error ? settlementError.message : String(settlementError)}`);
     }

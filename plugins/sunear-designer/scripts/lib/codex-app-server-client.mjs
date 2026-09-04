@@ -1,10 +1,42 @@
 import { spawn } from "node:child_process";
+import { existsSync } from "node:fs";
+import os from "node:os";
+import { resolve } from "node:path";
 import readline from "node:readline";
 
 const DEFAULT_REQUEST_TIMEOUT_MS = 30_000;
 
 function errorMessage(error) {
   return error instanceof Error ? error.message : String(error);
+}
+
+/**
+ * @param {{
+ *   agentKind?: string,
+ *   platform?: string,
+ *   environment?: Record<string, string | undefined>,
+ *   homeDirectory?: string,
+ *   fileExists?: (path: string) => boolean,
+ * }} [options]
+ */
+export function resolveCodexExecutable({
+  agentKind = "codex_cli",
+  platform = process.platform,
+  environment = process.env,
+  homeDirectory = os.homedir(),
+  fileExists = existsSync,
+} = {}) {
+  const configured = environment.SUNEAR_CODEX_EXECUTABLE?.trim();
+  if (configured) return configured;
+  if (agentKind === "codex_desktop" && platform === "darwin") {
+    const desktopCandidates = [
+      "/Applications/Codex.app/Contents/Resources/codex",
+      resolve(homeDirectory, "Applications/Codex.app/Contents/Resources/codex"),
+    ];
+    const desktopExecutable = desktopCandidates.find((candidate) => fileExists(candidate));
+    if (desktopExecutable) return desktopExecutable;
+  }
+  return "codex";
 }
 
 export function safeServerRequestResponse(method) {

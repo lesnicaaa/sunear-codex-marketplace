@@ -3,7 +3,7 @@ if ($env:PROCESSOR_ARCHITECTURE -notin @("AMD64", "ARM64")) {
   throw "SUNEAR_RECEIVER_PLATFORM_UNSUPPORTED: Windows/$env:PROCESSOR_ARCHITECTURE"
 }
 $installDirectory = Join-Path $env:PLUGIN_DATA "bin"
-$executable = Join-Path $installDirectory "sunear-codex-receiver-0.7.1.exe"
+$executable = Join-Path $installDirectory "sunear-codex-receiver-0.7.2.exe"
 if (-not (Test-Path $executable)) {
   New-Item -ItemType Directory -Force -Path $installDirectory | Out-Null
   $archive = Join-Path $env:PLUGIN_ROOT "bin/sunear-codex-receiver-windows-x64.exe.gz"
