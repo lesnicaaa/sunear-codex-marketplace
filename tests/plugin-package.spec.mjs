@@ -25,7 +25,14 @@ test("plugin owns the complete clean-host workflow", async () => {
     path.join(plugin, "scripts/lib/sunear-codex-receiver-core.mjs"),
     "utf8",
   );
-  assert.match(receiverCore, /RECEIVER_VERSION = "0\.7\.0"/);
+  assert.match(receiverCore, /RECEIVER_VERSION = "0\.7\.1"/);
+
+  const receiverSupervisor = await readFile(
+    path.join(plugin, "scripts/sunear-codex-receiver-supervisor.mjs"),
+    "utf8",
+  );
+  assert.match(receiverSupervisor, /receiverRuntimeMatches/);
+  assert.match(receiverSupervisor, /pluginSource === pluginIdentity\.pluginSource/);
 
   const receiverIdentity = await readFile(
     path.join(plugin, "scripts/lib/sunear-codex-receiver-identity.mjs"),

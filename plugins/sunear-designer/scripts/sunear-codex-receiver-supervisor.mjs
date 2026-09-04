@@ -44,6 +44,13 @@ export function readPluginRuntimeIdentity(pluginRoot = process.env.PLUGIN_ROOT) 
   });
 }
 
+export function receiverRuntimeMatches(status, pluginIdentity) {
+  return status?.version === RECEIVER_VERSION
+    && status.pluginId === pluginIdentity.pluginId
+    && status.pluginSource === pluginIdentity.pluginSource
+    && status.pluginVersion === pluginIdentity.pluginVersion;
+}
+
 function flag(name, fallback = undefined) {
   const index = process.argv.indexOf(name);
   return index >= 0 && process.argv[index + 1] ? process.argv[index + 1] : fallback;
@@ -166,12 +173,12 @@ function acquireDaemonLock(lockPath) {
   return null;
 }
 
-async function startSession(socketPath, sessionId, cwd, dataDirectory) {
+async function startSession(socketPath, sessionId, cwd, dataDirectory, pluginIdentity) {
   let existing;
   try {
     existing = await sendControl(socketPath, { command: "status" });
   } catch {}
-  if (existing && existing.version !== RECEIVER_VERSION) {
+  if (existing && !receiverRuntimeMatches(existing, pluginIdentity)) {
     await sendControl(socketPath, { command: "stop" });
     await waitForControlStop(socketPath);
     existing = undefined;
@@ -232,7 +239,14 @@ async function runDaemon({ socketPath, lockPath, cwd, dataDirectory, initialSess
         else if (message.command === "session-end" && typeof message.sessionId === "string") sessions.delete(message.sessionId);
         else if (message.command === "stop") sessions.clear();
         else if (message.command !== "status") throw new Error("INVALID_RECEIVER_CONTROL_COMMAND");
-        response = { ok: true, version: RECEIVER_VERSION, state: receiverState, sessions: sessions.size, pid: process.pid };
+        response = {
+          ok: true,
+          version: RECEIVER_VERSION,
+          ...pluginIdentity,
+          state: receiverState,
+          sessions: sessions.size,
+          pid: process.pid,
+        };
         socket.end(`${JSON.stringify(response)}\n`);
         if (message.command === "stop" || (message.command === "session-end" && sessions.size === 0)) {
           await stopDaemon();
@@ -305,7 +319,7 @@ async function main() {
     }
     else if (command === "session-start") {
       if (typeof sessionId !== "string" || !sessionId) throw new Error("SUNEAR_RECEIVER_SESSION_ID_REQUIRED");
-      await startSession(socketPath, sessionId, cwd, dataDirectory);
+      await startSession(socketPath, sessionId, cwd, dataDirectory, readPluginRuntimeIdentity());
     } else if (command === "session-end") {
       if (typeof sessionId !== "string" || !sessionId) throw new Error("SUNEAR_RECEIVER_SESSION_ID_REQUIRED");
       await sendControl(socketPath, { command: "session-end", sessionId }).catch(() => {});

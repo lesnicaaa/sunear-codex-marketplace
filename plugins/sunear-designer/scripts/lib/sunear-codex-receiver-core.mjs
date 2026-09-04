@@ -1,4 +1,4 @@
-export const RECEIVER_VERSION = "0.7.0";
+export const RECEIVER_VERSION = "0.7.1";
 export const RECEIVER_RUNTIME = "codex_app_server";
 export const EXECUTION_SCHEMA_VERSION = "sunear.agent-execution/3";
 export const SUPPORTED_COMMANDS = Object.freeze(["continue_project_workflow", "receiver_diagnostic"]);
