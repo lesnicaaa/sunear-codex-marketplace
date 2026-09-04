@@ -19,7 +19,7 @@ OAuth consent and local credential persistence are separate security facts. A Ke
 我要上传 PDF 创建一个 Sunear 项目，逐项核对原图与 Engine 设计，再完成正式报价单。请全程使用中文。
 ```
 
-The main workflow waits for the customer's PDF, creates the real project and verified Engine designs, then completes the market-backed quotation and returns it as a downloadable MCP resource. Accessing the newest existing project, re-exporting a document, or another focused operation remains a separate shortcut and runs only when explicitly requested. The session hook starts the local execution receiver automatically; no project checkout, Node.js, Homebrew, or separate receiver command is required.
+The main workflow waits for the customer's PDF, creates the real project and verified Engine designs, then completes the market-backed quotation and returns it as a downloadable MCP resource. Accessing the newest existing project, re-exporting a document, or another focused operation remains a separate shortcut and runs only when explicitly requested. The session hook downloads the checksum-pinned receiver for the current platform on first use and starts it automatically; no project checkout, Node.js, Homebrew, or separate receiver command is required.
 
 Supported receiver hosts: macOS Apple silicon and Intel, Linux ARM64 and x64, and Windows x64 (including Windows ARM64 through x64 emulation).
 
@@ -31,7 +31,7 @@ Maintainers can verify the self-contained package from a disposable Codex profil
 npm run smoke:install
 ```
 
-This verifies marketplace installation, both skills, the Stage MCP definition, lifecycle hooks, launchers, and all packaged receiver targets. OAuth consent and an authenticated quotation download remain interactive release checks. See [the release checklist](docs/release-checklist.md) before tagging.
+This verifies marketplace installation, both skills, the Stage MCP definition, lifecycle hooks, and the checksum-pinned platform downloader. Receiver assets are published separately on the matching immutable release tag. OAuth consent and an authenticated quotation download remain interactive release checks. See [the release checklist](docs/release-checklist.md) before tagging.
 
 ## Data boundary
 

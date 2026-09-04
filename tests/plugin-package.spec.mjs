@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { access, readFile } from "node:fs/promises";
+import { access, readFile, stat } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { test } from "node:test";
@@ -25,7 +25,7 @@ test("plugin owns the complete clean-host workflow", async () => {
     path.join(plugin, "scripts/lib/sunear-codex-receiver-core.mjs"),
     "utf8",
   );
-  assert.match(receiverCore, /RECEIVER_VERSION = "0\.7\.2"/);
+  assert.match(receiverCore, /RECEIVER_VERSION = "0\.7\.3"/);
 
   const receiverSupervisor = await readFile(
     path.join(plugin, "scripts/sunear-codex-receiver-supervisor.mjs"),
@@ -41,16 +41,20 @@ test("plugin owns the complete clean-host workflow", async () => {
   assert.match(receiverIdentity, /sunear-designer\/receiver/);
   assert.match(receiverIdentity, /plugins\/cache/);
 
+  const posixLauncher = await readFile(path.join(plugin, "scripts/sunear-codex-receiver-launch.sh"), "utf8");
+  assert.match(posixLauncher, /releases\/download\/v0\.1\.7/);
+  assert.match(posixLauncher, /expected_sha256="[a-f0-9]{64}"/);
+  assert.match(posixLauncher, /SUNEAR_RECEIVER_ARCHIVE_CHECKSUM_MISMATCH/);
+  const windowsLauncher = await readFile(path.join(plugin, "scripts/sunear-codex-receiver-launch.ps1"), "utf8");
+  assert.match(windowsLauncher, /releases\/download\/v0\.1\.7/);
+  assert.match(windowsLauncher, /Get-FileHash/);
+  await assert.rejects(stat(path.join(plugin, "bin")), { code: "ENOENT" });
+
   for (const relativePath of [
     "skills/sunear-create-design-from-pdf/SKILL.md",
     "skills/sunear-create-quote-from-project/SKILL.md",
     "scripts/sunear-codex-receiver-launch.sh",
     "scripts/sunear-codex-receiver-launch.ps1",
-    "bin/sunear-codex-receiver-darwin-arm64.gz",
-    "bin/sunear-codex-receiver-darwin-x64.gz",
-    "bin/sunear-codex-receiver-linux-arm64.gz",
-    "bin/sunear-codex-receiver-linux-x64.gz",
-    "bin/sunear-codex-receiver-windows-x64.exe.gz",
   ]) await access(path.join(plugin, relativePath));
 
   for (const relativePath of [

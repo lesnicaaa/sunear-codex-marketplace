@@ -8,11 +8,6 @@ SECURITY.md
 plugins/sunear-designer/.codex-plugin/plugin.json
 plugins/sunear-designer/.mcp.json
 plugins/sunear-designer/assets/icon.svg
-plugins/sunear-designer/bin/sunear-codex-receiver-darwin-arm64.gz
-plugins/sunear-designer/bin/sunear-codex-receiver-darwin-x64.gz
-plugins/sunear-designer/bin/sunear-codex-receiver-linux-arm64.gz
-plugins/sunear-designer/bin/sunear-codex-receiver-linux-x64.gz
-plugins/sunear-designer/bin/sunear-codex-receiver-windows-x64.exe.gz
 plugins/sunear-designer/hooks/hooks.json
 plugins/sunear-designer/scripts/lib/codex-app-server-client.mjs
 plugins/sunear-designer/scripts/lib/sunear-codex-receiver-core.mjs

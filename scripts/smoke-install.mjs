@@ -2,7 +2,7 @@
 
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
-import { access, mkdtemp, readFile, rm } from "node:fs/promises";
+import { access, mkdtemp, readFile, rm, stat } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
@@ -34,14 +34,11 @@ export async function smokeInstall({ log = console.log } = {}) {
     const hooks = JSON.parse(await readFile(path.join(installed.installedPath, "hooks/hooks.json"), "utf8"));
     assert.match(hooks.hooks.SessionStart[0].hooks[0].command, /receiver-launch\.sh/);
     assert.match(hooks.hooks.SessionStart[0].hooks[0].commandWindows, /receiver-launch\.ps1/);
-    for (const archive of [
-      "sunear-codex-receiver-darwin-arm64.gz",
-      "sunear-codex-receiver-darwin-x64.gz",
-      "sunear-codex-receiver-linux-arm64.gz",
-      "sunear-codex-receiver-linux-x64.gz",
-      "sunear-codex-receiver-windows-x64.exe.gz",
-    ]) await access(path.join(installed.installedPath, "bin", archive));
-    log("PASS clean-profile marketplace install and self-contained runtime discovery");
+    const launcher = await readFile(path.join(installed.installedPath, "scripts/sunear-codex-receiver-launch.sh"), "utf8");
+    assert.match(launcher, /releases\/download\/v0\.1\.7/);
+    assert.match(launcher, /expected_sha256="[a-f0-9]{64}"/);
+    await assert.rejects(stat(path.join(installed.installedPath, "bin")), { code: "ENOENT" });
+    log("PASS clean-profile marketplace install and platform-specific receiver discovery");
     log("MANUAL OAuth consent and authenticated PDF quotation download are required before release");
   } finally {
     await rm(profile, { recursive: true, force: true });
