@@ -16,7 +16,7 @@ Do not create or push a tag until every required check below passes. Record the 
 - [ ] `npm run smoke:install` installs the local marketplace and plugin using a disposable `CODEX_HOME`, discovers both current skills, and verifies MCP, hooks, launchers, and every receiver archive.
 - [ ] On a clean supported host, start a new Codex task and verify OAuth opens without manually editing MCP configuration.
 - [ ] Approve the requested Sunear permissions and verify `list_projects` returns projects in stable newest-first order.
-- [ ] Ask Codex to access the first project and download a formal PDF quotation; verify the response contains a downloadable PDF resource.
+- [ ] In the same projectless task, wait for the user to upload a PDF, create the real project from that source, verify every source crop and Engine design, then complete market, pricing, confirmation, translation, formal quotation, and PDF export through the two canonical skills. Do not substitute an arbitrary existing project for this onboarding journey.
 - [ ] Verify the receiver reports ready without a repository checkout, Node.js, Homebrew, or a separate receiver command.
 
 ## Publication

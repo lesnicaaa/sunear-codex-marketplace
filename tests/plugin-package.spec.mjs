@@ -21,6 +21,19 @@ test("plugin owns the complete clean-host workflow", async () => {
   assert.match(startup.commandWindows, /sunear-codex-receiver-launch\.ps1/);
   assert.equal(hooks.hooks.SessionStart[0].matcher, "startup|resume|clear|compact");
 
+  const receiverCore = await readFile(
+    path.join(plugin, "scripts/lib/sunear-codex-receiver-core.mjs"),
+    "utf8",
+  );
+  assert.match(receiverCore, /RECEIVER_VERSION = "0\.7\.0"/);
+
+  const receiverIdentity = await readFile(
+    path.join(plugin, "scripts/lib/sunear-codex-receiver-identity.mjs"),
+    "utf8",
+  );
+  assert.match(receiverIdentity, /sunear-designer\/receiver/);
+  assert.match(receiverIdentity, /plugins\/cache/);
+
   for (const relativePath of [
     "skills/sunear-create-design-from-pdf/SKILL.md",
     "skills/sunear-create-quote-from-project/SKILL.md",
