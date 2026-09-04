@@ -17,7 +17,7 @@ Do not create or push a tag until every required check below passes. Record the 
 - [ ] On a clean supported host, start a new Codex task and verify OAuth opens without manually editing MCP configuration.
 - [ ] Approve the requested Sunear permissions and verify `list_projects` returns projects in stable newest-first order.
 - [ ] In the same projectless task, wait for the user to upload a PDF, create the real project from that source, verify every source crop and Engine design, then complete market, pricing, confirmation, translation, formal quotation, and PDF export through the two canonical skills. Do not substitute an arbitrary existing project for this onboarding journey.
-- [ ] On each supported platform, verify first use downloads only that platform's release asset, rejects a checksum mismatch, and reports ready without a repository checkout, Node.js, Homebrew, or a separate receiver command.
+- [ ] On macOS Apple Silicon and Windows x64, verify first use downloads only the matching `v0.1.8` asset, rejects a checksum mismatch, uses the installed Desktop host's App Server, completes OAuth when required, and reports ready without a repository checkout, Node.js, Homebrew, or a separate receiver command. macOS Intel, Windows ARM64, and Linux are unsupported and must fail before download.
 
 ## Publication
 

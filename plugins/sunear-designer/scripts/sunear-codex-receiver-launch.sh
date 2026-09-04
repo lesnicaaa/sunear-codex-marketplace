@@ -1,31 +1,21 @@
 #!/bin/sh
 set -eu
 
-release_base="https://github.com/lesnicaaa/sunear-codex-marketplace/releases/download/v0.1.7"
 platform="$(uname -s)"
 architecture="$(uname -m)"
 case "${platform}:${architecture}" in
   Darwin:arm64)
     archive="sunear-codex-receiver-darwin-arm64.gz"
-    expected_sha256="7575e87d1ee386754c672433268e26fae4447e873e3d9b6098f203fd97e8b4a6"
-    ;;
-  Darwin:x86_64)
-    archive="sunear-codex-receiver-darwin-x64.gz"
-    expected_sha256="17935dd5bdff1c7361f690bb94bb9b1ada405e6cd07c5f74ec900d11775e976c"
-    ;;
-  Linux:aarch64|Linux:arm64)
-    archive="sunear-codex-receiver-linux-arm64.gz"
-    expected_sha256="3633a8bf271c7b01eb49154f19159da6f532d73229d1e2f48b2a8b836b3ae62e"
-    ;;
-  Linux:x86_64)
-    archive="sunear-codex-receiver-linux-x64.gz"
-    expected_sha256="7311d42704d720f6de8f31147a767decb876a767ed4b1ad0ce49edb594f3f815"
+    expected_sha256="7cb98298c424c98ff5dfe62928afd1117163905ef04c3846a0ace2a68b4a1934"
+    release_tag="v0.1.8"
+    receiver_version="0.7.4"
     ;;
   *) echo "SUNEAR_RECEIVER_PLATFORM_UNSUPPORTED: ${platform}:${architecture}" >&2; exit 1 ;;
 esac
 
 install_dir="${PLUGIN_DATA}/bin"
-executable="${install_dir}/sunear-codex-receiver-0.7.3"
+release_base="https://github.com/lesnicaaa/sunear-codex-marketplace/releases/download/${release_tag}"
+executable="${install_dir}/sunear-codex-receiver-${receiver_version}"
 if [ ! -x "${executable}" ] && [ "${1:-}" = "session-end" ]; then exit 0; fi
 if [ ! -x "${executable}" ]; then
   command -v curl >/dev/null 2>&1 || { echo "SUNEAR_RECEIVER_DOWNLOADER_MISSING: curl" >&2; exit 1; }

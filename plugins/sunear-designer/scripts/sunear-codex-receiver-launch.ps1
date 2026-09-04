@@ -1,13 +1,13 @@
 $ErrorActionPreference = "Stop"
-if ($env:PROCESSOR_ARCHITECTURE -notin @("AMD64", "ARM64")) {
+if ($env:PROCESSOR_ARCHITECTURE -ne "AMD64") {
   throw "SUNEAR_RECEIVER_PLATFORM_UNSUPPORTED: Windows/$env:PROCESSOR_ARCHITECTURE"
 }
 
 $archive = "sunear-codex-receiver-windows-x64.exe.gz"
-$expectedSha256 = "eed1a150971b8e6d734eb7abae1b3a793859cc66afbaade3fb0a2755cb835474"
-$downloadUrl = "https://github.com/lesnicaaa/sunear-codex-marketplace/releases/download/v0.1.7/$archive"
+$expectedSha256 = "6b9e51fab29e117f71ee76522ca358d74c1d7663d3d0e25c97e4e5aa864277d2"
+$downloadUrl = "https://github.com/lesnicaaa/sunear-codex-marketplace/releases/download/v0.1.8/$archive"
 $installDirectory = Join-Path $env:PLUGIN_DATA "bin"
-$executable = Join-Path $installDirectory "sunear-codex-receiver-0.7.3.exe"
+$executable = Join-Path $installDirectory "sunear-codex-receiver-0.7.4.exe"
 if ((-not (Test-Path $executable)) -and $args.Count -gt 0 -and $args[0] -eq "session-end") { exit 0 }
 if (-not (Test-Path $executable)) {
   New-Item -ItemType Directory -Force -Path $installDirectory | Out-Null

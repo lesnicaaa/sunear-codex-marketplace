@@ -143,14 +143,21 @@ function launchDaemon({ cwd, dataDirectory, sessionId }) {
   closeSync(logDescriptor);
 }
 
-function openBrowserPairingUrl(url) {
+function launchBrowser(command, args) {
   return new Promise((resolvePromise, reject) => {
-    const command = process.platform === "darwin" ? "open" : process.platform === "win32" ? "cmd" : "xdg-open";
-    const args = process.platform === "win32" ? ["/c", "start", "", url] : [url];
-    const child = spawn(command, args, { detached: true, stdio: "ignore" });
+    const child = spawn(command, args, { stdio: "ignore" });
     child.once("error", reject);
-    child.once("spawn", () => { child.unref(); resolvePromise(); });
+    child.once("exit", (code) => code === 0 ? resolvePromise() : reject(new Error(`SUNEAR_BROWSER_OPEN_FAILED:${code}`)));
   });
+}
+
+async function openBrowserPairingUrl(url) {
+  if (process.platform === "darwin") {
+    try { await launchBrowser("/usr/bin/open", ["-a", "Google Chrome", url]); return; }
+    catch { await launchBrowser("/usr/bin/open", [url]); return; }
+  }
+  if (process.platform === "win32") return launchBrowser("cmd", ["/c", "start", "", url]);
+  return launchBrowser("xdg-open", [url]);
 }
 
 function acquireDaemonLock(lockPath) {
@@ -281,6 +288,7 @@ async function runDaemon({ socketPath, lockPath, cwd, dataDirectory, initialSess
         logger: { error: (message) => process.stderr.write(`[receiver] ${message}\n`) },
         onStatusChange: (status) => { receiverState = status; },
         onBrowserPairingUrl: openBrowserPairingUrl,
+        onOAuthAuthorizationUrl: openBrowserPairingUrl,
       });
       activeReceiver = receiver;
       try {

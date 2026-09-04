@@ -30,6 +30,8 @@ export function resolveCodexExecutable({
   if (configured) return configured;
   if (agentKind === "codex_desktop" && platform === "darwin") {
     const desktopCandidates = [
+      "/Applications/ChatGPT.app/Contents/Resources/codex",
+      resolve(homeDirectory, "Applications/ChatGPT.app/Contents/Resources/codex"),
       "/Applications/Codex.app/Contents/Resources/codex",
       resolve(homeDirectory, "Applications/Codex.app/Contents/Resources/codex"),
     ];

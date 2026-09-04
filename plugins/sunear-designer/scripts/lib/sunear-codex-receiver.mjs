@@ -102,6 +102,7 @@ export class SunearCodexReceiver {
    *   logger?: Pick<Console, "error">,
    *   onStatusChange?: (status: "ready" | "degraded" | "stopped") => void,
    *   onBrowserPairingUrl?: (url: string) => Promise<void> | void,
+   *   onOAuthAuthorizationUrl?: (url: string) => Promise<void> | void,
    * }} [options]
    */
   constructor({
@@ -124,6 +125,7 @@ export class SunearCodexReceiver {
     logger = console,
     onStatusChange = () => {},
     onBrowserPairingUrl = () => {},
+    onOAuthAuthorizationUrl = onBrowserPairingUrl,
   } = {}) {
     if (typeof receiverId !== "string" || !receiverId) throw new Error("SUNEAR_RECEIVER_ID_REQUIRED");
     if (typeof deviceId !== "string" || !deviceId) throw new Error("SUNEAR_DEVICE_ID_REQUIRED");
@@ -155,7 +157,9 @@ export class SunearCodexReceiver {
     this.logger = logger;
     this.onStatusChange = onStatusChange;
     this.onBrowserPairingUrl = onBrowserPairingUrl;
+    this.onOAuthAuthorizationUrl = onOAuthAuthorizationUrl;
     this.browserPairingOpened = false;
+    this.oauthLoginAttempted = false;
     this.controlThreadId = null;
     this.lastHeartbeatAt = 0;
     this.stopping = false;
@@ -176,7 +180,7 @@ export class SunearCodexReceiver {
       version: RECEIVER_VERSION,
     });
     this.controlThreadId = await this.startThread();
-    await this.waitForReceiverTools(this.controlThreadId);
+    await this.ensureReceiverTools(this.controlThreadId);
     await callSunearTool(this.client, this.controlThreadId, "workflow_context", {
       agentWorkId: `sunear-receiver:${this.receiverId}`,
     });
@@ -215,6 +219,36 @@ export class SunearCodexReceiver {
       }
     }
     throw lastError ?? new Error("SUNEAR_MCP_STARTUP_TIMEOUT");
+  }
+
+  async ensureReceiverTools(threadId) {
+    try {
+      return await this.waitForReceiverTools(threadId);
+    } catch (error) {
+      if (!(error instanceof Error) || !error.message.startsWith("SUNEAR_MCP_NOT_AUTHENTICATED") || this.oauthLoginAttempted) throw error;
+      this.oauthLoginAttempted = true;
+      const completed = this.client.createNotificationWaiter(
+        (message) => message.method === "mcpServer/oauthLogin/completed"
+          && message.params?.name === "sunear"
+          && (message.params?.threadId == null || message.params.threadId === threadId),
+        5 * 60_000,
+      );
+      try {
+        const response = await this.client.request("mcpServer/oauth/login", { name: "sunear", threadId, clientRegistration: "dcr" });
+        if (typeof response?.authorizationUrl !== "string" || !response.authorizationUrl.startsWith("https://")) {
+          throw new Error("SUNEAR_MCP_OAUTH_URL_INVALID");
+        }
+        await this.onOAuthAuthorizationUrl(response.authorizationUrl);
+        const notification = await completed.promise;
+        if (notification.params?.success !== true) {
+          throw new Error(`SUNEAR_MCP_OAUTH_FAILED: ${String(notification.params?.error ?? "unknown")}`);
+        }
+        await this.client.request("config/mcpServer/reload", {});
+        return this.waitForReceiverTools(threadId);
+      } finally {
+        completed.cancel();
+      }
+    }
   }
 
   async report(status, timeoutMs) {
@@ -289,7 +323,7 @@ export class SunearCodexReceiver {
 
   async execute(request) {
     const threadId = await this.startThread();
-    await this.waitForReceiverTools(threadId);
+    await this.ensureReceiverTools(threadId);
     if (request.leaseExpiresAt <= this.now() + SETTLEMENT_MARGIN_MS) throw new Error("EXECUTION_REQUEST_LEASE_EXPIRED");
     const completed = this.client.createNotificationWaiter(
       (message) => message.method === "turn/completed" && message.params?.threadId === threadId,
