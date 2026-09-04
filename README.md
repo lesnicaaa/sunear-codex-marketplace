@@ -11,6 +11,8 @@ codex plugin add sunear-designer@sunear
 
 Restart or open a new Codex task after installation. Codex will ask you to authorize the Sunear MCP connection in the browser. Approve the requested project and workflow permissions, then start the primary workflow in Chinese:
 
+For interactive authorization, the plugin instructs Codex to use the connected Chrome profile when available, otherwise the operating system's default daily browser. It must not silently fall back to Codex's isolated in-app browser, import browser cookies, or request browser credentials.
+
 ```text
 我要上传 PDF 创建一个 Sunear 项目，逐项核对原图与 Engine 设计，再完成正式报价单。请全程使用中文。
 ```

@@ -58,7 +58,10 @@ test("plugin owns the complete clean-host workflow", async () => {
     "skills/sunear-create-quote-from-project/SKILL.md",
   ]) {
     const contents = await readFile(path.join(plugin, relativePath), "utf8");
-    assert.match(contents, /sunear\.agent-connection\/4/);
+    assert.match(contents, /sunear\.agent-connection\/5/);
+    assert.match(contents, /connected user Chrome profile/);
+    assert.match(contents, /never silently use Codex's isolated in-app browser/);
+    assert.match(contents, /present the exact URL as a clickable link and state that it has not opened/);
     assert.match(contents, /Use Chinese for every user-visible progress update/);
   }
 });
