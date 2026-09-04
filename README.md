@@ -19,7 +19,7 @@ OAuth consent and local credential persistence are separate security facts. A Ke
 我要上传 PDF 创建一个 Sunear 项目，逐项核对原图与 Engine 设计，再完成正式报价单。请全程使用中文。
 ```
 
-The main workflow waits for the customer's PDF, creates the real project and verified Engine designs, then completes the market-backed quotation and returns it as a downloadable MCP resource. Accessing the newest existing project, re-exporting a document, or another focused operation remains a separate shortcut and runs only when explicitly requested. The session hook downloads the checksum-pinned receiver for the current platform on first use and starts it automatically; no project checkout, Node.js, Homebrew, or separate receiver command is required.
+The main workflow waits for the customer's PDF, creates the real project and verified Engine designs, then completes the market-backed quotation and returns it as a downloadable MCP resource. Accessing the newest existing project, re-exporting a document, or another focused operation remains a separate shortcut and runs only when explicitly requested. The session hook downloads the already-published checksum-pinned receiver `0.7.3` for the current platform on first use and starts it automatically; this plugin-only release does not upload the compiler runtime again. No project checkout, Node.js, Homebrew, or separate receiver command is required.
 
 Supported receiver hosts: macOS Apple Silicon and Windows x64. macOS Intel, Windows ARM64, and Linux are unsupported.
 

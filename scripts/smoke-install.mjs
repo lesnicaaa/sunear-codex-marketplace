@@ -35,13 +35,13 @@ export async function smokeInstall({ log = console.log } = {}) {
     assert.match(hooks.hooks.SessionStart[0].hooks[0].command, /receiver-launch\.sh/);
     assert.match(hooks.hooks.SessionStart[0].hooks[0].commandWindows, /receiver-launch\.ps1/);
     const launcher = await readFile(path.join(installed.installedPath, "scripts/sunear-codex-receiver-launch.sh"), "utf8");
-    assert.match(launcher, /release_tag="v0\.1\.8"/);
+    assert.match(launcher, /release_tag="v0\.1\.7"/);
     assert.match(launcher, /Darwin:arm64/);
     assert.doesNotMatch(launcher, /Darwin:x86_64|Linux:/);
     assert.match(launcher, /expected_sha256="[a-f0-9]{64}"/);
     const windowsLauncher = await readFile(path.join(installed.installedPath, "scripts/sunear-codex-receiver-launch.ps1"), "utf8");
     assert.match(windowsLauncher, /PROCESSOR_ARCHITECTURE -ne "AMD64"/);
-    assert.match(windowsLauncher, /releases\/download\/v0\.1\.8/);
+    assert.match(windowsLauncher, /releases\/download\/v0\.1\.7/);
     await assert.rejects(stat(path.join(installed.installedPath, "bin")), { code: "ENOENT" });
     log("PASS clean-profile marketplace install and platform-specific receiver discovery");
     log("MANUAL OAuth consent and authenticated PDF quotation download are required before release");
