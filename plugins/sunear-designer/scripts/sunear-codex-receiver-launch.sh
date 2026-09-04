@@ -16,7 +16,7 @@ esac
 install_dir="${PLUGIN_DATA}/bin"
 release_base="https://github.com/lesnicaaa/sunear-codex-marketplace/releases/download/${release_tag}"
 executable="${install_dir}/sunear-codex-receiver-${receiver_version}"
-if [ ! -x "${executable}" ] && [ "${1:-}" = "session-end" ]; then exit 0; fi
+if [ "${1:-}" = "session-end" ]; then exit 0; fi
 if [ ! -x "${executable}" ]; then
   command -v curl >/dev/null 2>&1 || { echo "SUNEAR_RECEIVER_DOWNLOADER_MISSING: curl" >&2; exit 1; }
   mkdir -p "${install_dir}"

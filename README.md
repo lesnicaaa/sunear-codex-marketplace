@@ -21,6 +21,8 @@ OAuth consent and local credential persistence are separate security facts. A Ke
 
 The main workflow waits for the customer's PDF, creates the real project and verified Engine designs, then completes the market-backed quotation and returns it as a downloadable MCP resource. Accessing the newest existing project, re-exporting a document, or another focused operation remains a separate shortcut and runs only when explicitly requested. The session hook downloads the already-published checksum-pinned receiver `0.7.3` for the current platform on first use and starts it automatically; this plugin-only release does not upload the compiler runtime again. No project checkout, Node.js, Homebrew, or separate receiver command is required.
 
+Device pairing, receiver heartbeat, and verified Codex execution are separate states. Ending a Codex task does not shut down the device receiver. The account page reports readiness only after the current receiver's latest terminal diagnostic succeeds; a failed diagnostic remains visible as an error until a later successful verification.
+
 Supported receiver hosts: macOS Apple Silicon and Windows x64. macOS Intel, Windows ARM64, and Linux are unsupported.
 
 ## Release verification

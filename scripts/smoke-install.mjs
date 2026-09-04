@@ -39,6 +39,7 @@ export async function smokeInstall({ log = console.log } = {}) {
     assert.match(launcher, /Darwin:arm64/);
     assert.doesNotMatch(launcher, /Darwin:x86_64|Linux:/);
     assert.match(launcher, /expected_sha256="[a-f0-9]{64}"/);
+    assert.match(launcher, /\$\{1:-\}" = "session-end" \]; then exit 0/);
     const windowsLauncher = await readFile(path.join(installed.installedPath, "scripts/sunear-codex-receiver-launch.ps1"), "utf8");
     assert.match(windowsLauncher, /PROCESSOR_ARCHITECTURE -ne "AMD64"/);
     assert.match(windowsLauncher, /releases\/download\/v0\.1\.7/);

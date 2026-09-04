@@ -8,7 +8,7 @@ $expectedSha256 = "eed1a150971b8e6d734eb7abae1b3a793859cc66afbaade3fb0a2755cb835
 $downloadUrl = "https://github.com/lesnicaaa/sunear-codex-marketplace/releases/download/v0.1.7/$archive"
 $installDirectory = Join-Path $env:PLUGIN_DATA "bin"
 $executable = Join-Path $installDirectory "sunear-codex-receiver-0.7.3.exe"
-if ((-not (Test-Path $executable)) -and $args.Count -gt 0 -and $args[0] -eq "session-end") { exit 0 }
+if ($args.Count -gt 0 -and $args[0] -eq "session-end") { exit 0 }
 if (-not (Test-Path $executable)) {
   New-Item -ItemType Directory -Force -Path $installDirectory | Out-Null
   $archiveTemporary = Join-Path $installDirectory ".sunear-receiver.$([Guid]::NewGuid().ToString('N')).gz"

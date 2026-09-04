@@ -58,10 +58,12 @@ test("plugin owns the complete clean-host workflow", async () => {
   assert.doesNotMatch(posixLauncher, /Linux:/);
   assert.match(posixLauncher, /expected_sha256="[a-f0-9]{64}"/);
   assert.match(posixLauncher, /SUNEAR_RECEIVER_ARCHIVE_CHECKSUM_MISMATCH/);
+  assert.match(posixLauncher, /\$\{1:-\}" = "session-end" \]; then exit 0/);
   const windowsLauncher = await readFile(path.join(plugin, "scripts/sunear-codex-receiver-launch.ps1"), "utf8");
   assert.match(windowsLauncher, /PROCESSOR_ARCHITECTURE -ne "AMD64"/);
   assert.match(windowsLauncher, /releases\/download\/v0\.1\.7/);
   assert.match(windowsLauncher, /sunear-codex-receiver-0\.7\.3\.exe/);
+  assert.match(windowsLauncher, /\$args\[0\] -eq "session-end"\) \{ exit 0 \}/);
   assert.match(windowsLauncher, /Get-FileHash/);
   await assert.rejects(stat(path.join(plugin, "bin")), { code: "ENOENT" });
 
