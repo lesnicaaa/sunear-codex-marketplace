@@ -65,6 +65,9 @@ export class SunearCodexReceiver {
    *   deviceName: string,
    *   agentName: string,
    *   agentKind: "codex_desktop" | "codex_cli",
+   *   pluginId: string,
+   *   pluginSource: "public_marketplace" | "personal_local",
+   *   pluginVersion: string,
    *   logger?: Pick<Console, "error">,
    *   onStatusChange?: (status: "ready" | "degraded" | "stopped") => void,
    *   onBrowserPairingUrl?: (url: string) => Promise<void> | void,
@@ -76,6 +79,9 @@ export class SunearCodexReceiver {
     deviceName,
     agentName,
     agentKind,
+    pluginId,
+    pluginSource,
+    pluginVersion,
     cwd = process.cwd(),
     client,
     heartbeatMs = DEFAULT_HEARTBEAT_MS,
@@ -92,11 +98,17 @@ export class SunearCodexReceiver {
     if (typeof deviceId !== "string" || !deviceId) throw new Error("SUNEAR_DEVICE_ID_REQUIRED");
     if (typeof deviceName !== "string" || !deviceName) throw new Error("SUNEAR_RECEIVER_DEVICE_NAME_REQUIRED");
     if (typeof agentName !== "string" || !agentName) throw new Error("SUNEAR_RECEIVER_AGENT_NAME_REQUIRED");
+    if (typeof pluginId !== "string" || !pluginId) throw new Error("SUNEAR_PLUGIN_ID_REQUIRED");
+    if (pluginSource !== "public_marketplace" && pluginSource !== "personal_local") throw new Error("SUNEAR_PLUGIN_SOURCE_INVALID");
+    if (typeof pluginVersion !== "string" || !pluginVersion) throw new Error("SUNEAR_PLUGIN_VERSION_REQUIRED");
     this.receiverId = receiverId;
     this.deviceId = deviceId;
     this.deviceName = deviceName;
     this.agentName = agentName;
     this.agentKind = agentKind;
+    this.pluginId = pluginId;
+    this.pluginSource = pluginSource;
+    this.pluginVersion = pluginVersion;
     this.cwd = cwd;
     this.client = client ?? new CodexAppServerClient({
       cwd,
@@ -184,6 +196,9 @@ export class SunearCodexReceiver {
       runtime: RECEIVER_RUNTIME,
       status,
       version: RECEIVER_VERSION,
+      pluginId: this.pluginId,
+      pluginSource: this.pluginSource,
+      pluginVersion: this.pluginVersion,
     }, timeoutMs);
     this.lastHeartbeatAt = this.now();
     this.setStatus(status);

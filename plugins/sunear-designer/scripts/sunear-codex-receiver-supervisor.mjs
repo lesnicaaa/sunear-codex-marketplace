@@ -15,9 +15,33 @@ import { SunearCodexReceiver } from "./lib/sunear-codex-receiver.mjs";
 const scriptPath = fileURLToPath(import.meta.url);
 const RECEIVER_INSTANCE_ID = "sunear-designer";
 const RESTART_DELAY_MS = 5_000;
+const PLUGIN_ID_PATTERN = /^[a-z0-9][a-z0-9-]{0,63}$/;
+const PLUGIN_VERSION_PATTERN = /^[A-Za-z0-9][A-Za-z0-9._+-]{0,127}$/;
 
 function receiverInstanceDigest(instanceId, userIdentity) {
   return createHash("sha256").update(`${userIdentity}\n${instanceId}`).digest("hex").slice(0, 16);
+}
+
+export function isCompiledReceiverExecutable(executablePath = process.execPath, modulePath = scriptPath) {
+  return resolve(executablePath) === resolve(modulePath) || modulePath.includes("/$bunfs/");
+}
+
+export function readPluginRuntimeIdentity(pluginRoot = process.env.PLUGIN_ROOT) {
+  if (typeof pluginRoot !== "string" || !pluginRoot) throw new Error("SUNEAR_PLUGIN_ROOT_REQUIRED");
+  const root = resolve(pluginRoot);
+  const manifest = JSON.parse(readFileSync(resolve(root, ".codex-plugin/plugin.json"), "utf8"));
+  if (!PLUGIN_ID_PATTERN.test(manifest?.name ?? "") || !PLUGIN_VERSION_PATTERN.test(manifest?.version ?? "")) {
+    throw new Error("SUNEAR_PLUGIN_MANIFEST_INVALID");
+  }
+  const normalizedRoot = root.replaceAll("\\", "/");
+  const cacheIdentity = normalizedRoot.match(/\/plugins\/cache\/(sunear|personal)\/([^/]+)(?:\/|$)/);
+  if (!cacheIdentity || cacheIdentity[2] !== manifest.name) throw new Error("SUNEAR_PLUGIN_SOURCE_UNVERIFIED");
+  const marketplace = cacheIdentity[1];
+  return Object.freeze({
+    pluginId: `${manifest.name}@${marketplace}`,
+    pluginSource: marketplace === "sunear" ? "public_marketplace" : "personal_local",
+    pluginVersion: manifest.version,
+  });
 }
 
 function flag(name, fallback = undefined) {
@@ -96,7 +120,7 @@ async function waitForControlStop(socketPath) {
 function launchDaemon({ cwd, dataDirectory, sessionId }) {
   mkdirSync(dataDirectory, { recursive: true, mode: 0o700 });
   const logDescriptor = openSync(resolve(dataDirectory, "receiver.log"), "a", 0o600);
-  const compiledExecutable = resolve(process.execPath) === resolve(scriptPath);
+  const compiledExecutable = isCompiledReceiverExecutable();
   const child = spawn(process.execPath, [...(compiledExecutable ? [] : [scriptPath]), "daemon", "--cwd", cwd, "--data-dir", dataDirectory, "--initial-session", sessionId], {
     cwd,
     detached: true,
@@ -159,7 +183,7 @@ async function startSession(socketPath, sessionId, cwd, dataDirectory) {
   return sendControl(socketPath, { command: "session-start", sessionId });
 }
 
-async function runDaemon({ socketPath, lockPath, cwd, dataDirectory, initialSessionId, receiverIdentity }) {
+async function runDaemon({ socketPath, lockPath, cwd, dataDirectory, initialSessionId, receiverIdentity, pluginIdentity }) {
   mkdirSync(dataDirectory, { recursive: true, mode: 0o700 });
   const lock = acquireDaemonLock(lockPath);
   if (!lock) return;
@@ -234,6 +258,7 @@ async function runDaemon({ socketPath, lockPath, cwd, dataDirectory, initialSess
       const receiver = new SunearCodexReceiver({
         cwd,
         ...receiverIdentity,
+        ...pluginIdentity,
         logger: { error: (message) => process.stderr.write(`[receiver] ${message}\n`) },
         onStatusChange: (status) => { receiverState = status; },
         onBrowserPairingUrl: openBrowserPairingUrl,
@@ -276,7 +301,7 @@ async function main() {
   try {
     if (command === "daemon") {
       if (typeof initialSessionId !== "string" || !initialSessionId) throw new Error("SUNEAR_RECEIVER_SESSION_ID_REQUIRED");
-      await runDaemon({ socketPath, lockPath, cwd, dataDirectory, initialSessionId, receiverIdentity });
+      await runDaemon({ socketPath, lockPath, cwd, dataDirectory, initialSessionId, receiverIdentity, pluginIdentity: readPluginRuntimeIdentity() });
     }
     else if (command === "session-start") {
       if (typeof sessionId !== "string" || !sessionId) throw new Error("SUNEAR_RECEIVER_SESSION_ID_REQUIRED");
