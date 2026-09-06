@@ -1,7 +1,7 @@
 {
   "name": "sunear-designer",
-  "version": "0.4.0+codex.20260905010300",
-  "description": "Create evidence-backed Sunear designs and download formal quotations through the deployed MCP workflow.",
+  "version": "0.5.0+codex.20260907051000",
+  "description": "Create audited Sunear designs, project interpretations, and formal quotations through the deployed MCP workflow.",
   "author": {
     "name": "Sunear",
     "url": "https://github.com/lesnicaaa"
@@ -21,7 +21,7 @@
   "interface": {
     "displayName": "Sunear Designer",
     "shortDescription": "Create verified designs and formal quotations.",
-    "longDescription": "Create evidence-backed Sunear projects, access existing projects, complete the commercial workflow, and download formal PDF or XLSX quotations.",
+    "longDescription": "Create evidence-backed Sunear projects, audit source drawings against Engine designs, publish professional project interpretations, complete the commercial workflow, and download formal PDF or XLSX quotations.",
     "developerName": "Sunear",
     "category": "Productivity",
     "capabilities": [

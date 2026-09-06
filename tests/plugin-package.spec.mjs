@@ -9,6 +9,7 @@ const plugin = path.join(root, "plugins/sunear-designer");
 
 test("plugin owns the complete clean-host workflow", async () => {
   const manifest = JSON.parse(await readFile(path.join(plugin, ".codex-plugin/plugin.json"), "utf8"));
+  assert.equal(manifest.version, "0.5.0+codex.20260907051000");
   assert.equal(manifest.skills, "./skills/");
   assert.equal(manifest.mcpServers, "./.mcp.json");
 
@@ -89,4 +90,14 @@ test("plugin owns the complete clean-host workflow", async () => {
     assert.match(contents, /supported file credential store only after explicitly explaining its weaker local-storage boundary/);
     assert.match(contents, /Use Chinese for every user-visible progress update/);
   }
+
+  const designSkill = await readFile(path.join(plugin, "skills/sunear-create-design-from-pdf/SKILL.md"), "utf8");
+  assert.match(designSkill, /audit_project_design/);
+  assert.match(designSkill, /source_vs_engine_bidirectional/);
+  assert.match(designSkill, /save_project_interpretation/);
+  assert.match(designSkill, /only the user does that on the project interpretation page/);
+
+  const quoteSkill = await readFile(path.join(plugin, "skills/sunear-create-quote-from-project/SKILL.md"), "utf8");
+  assert.match(quoteSkill, /current design-audit, market, pricing, climate, local-preference, and foreign-trade evidence/);
+  assert.match(quoteSkill, /accepted requirements are inputs for later explicit normal project commands/);
 });
