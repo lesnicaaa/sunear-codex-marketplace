@@ -6,9 +6,9 @@ architecture="$(uname -m)"
 case "${platform}:${architecture}" in
   Darwin:arm64)
     archive="sunear-codex-receiver-darwin-arm64.gz"
-    expected_sha256="7575e87d1ee386754c672433268e26fae4447e873e3d9b6098f203fd97e8b4a6"
-    release_tag="v0.1.7"
-    receiver_version="0.7.3"
+    expected_sha256="7fe6a28dc2de3530bbdc13483177bf3eef647c2d43723659b8d4c84dffb6f7fa"
+    release_tag="v0.1.11"
+    receiver_version="0.7.5"
     ;;
   *) echo "SUNEAR_RECEIVER_PLATFORM_UNSUPPORTED: ${platform}:${architecture}" >&2; exit 1 ;;
 esac

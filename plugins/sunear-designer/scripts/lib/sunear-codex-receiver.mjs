@@ -166,6 +166,7 @@ export class SunearCodexReceiver {
     this.heartbeatInFlight = null;
     this.heartbeatTimer = null;
     this.stopPromise = null;
+    this.recoveryRequested = false;
   }
 
   setStatus(status) {
@@ -215,6 +216,13 @@ export class SunearCodexReceiver {
       } catch (error) {
         lastError = error;
         if (error instanceof Error && error.message.startsWith("SUNEAR_MCP_NOT_AUTHENTICATED")) throw error;
+        if (error instanceof Error && error.message.startsWith("SUNEAR_RECEIVER_TOOLS_MISSING")) {
+          // OAuth capability in status is not proof that the stored grant still works.
+          try { await callSunearTool(this.client, threadId, "workflow_context", { agentWorkId: `sunear-receiver:${this.receiverId}` }); }
+          catch (probeError) {
+            if (probeError instanceof Error && probeError.message.startsWith("SUNEAR_MCP_NOT_AUTHENTICATED")) throw probeError;
+          }
+        }
         await this.sleep(250);
       }
     }
@@ -241,7 +249,9 @@ export class SunearCodexReceiver {
         await this.onOAuthAuthorizationUrl(response.authorizationUrl);
         const notification = await completed.promise;
         if (notification.params?.success !== true) {
-          throw new Error(`SUNEAR_MCP_OAUTH_FAILED: ${String(notification.params?.error ?? "unknown")}`);
+          const detail = String(notification.params?.error ?? "unknown");
+          throw new Error(/keyring|keychain|Operation not permitted/i.test(detail)
+            ? "SUNEAR_CREDENTIAL_PERSISTENCE_FAILED" : "SUNEAR_MCP_OAUTH_FAILED");
         }
         await this.client.request("config/mcpServer/reload", {});
         return this.waitForReceiverTools(threadId);
@@ -269,8 +279,7 @@ export class SunearCodexReceiver {
     this.lastHeartbeatAt = this.now();
     this.setStatus(status);
     if (!this.browserPairingOpened && typeof response.browserPairingUrl === "string") {
-      this.browserPairingOpened = true;
-      try { await this.onBrowserPairingUrl(response.browserPairingUrl); }
+      try { await this.onBrowserPairingUrl(response.browserPairingUrl); this.browserPairingOpened = true; }
       catch (error) { this.logger.error(`SUNEAR_BROWSER_PAIRING_OPEN_FAILED: ${error instanceof Error ? error.message : String(error)}`); }
     }
     return response;
@@ -419,6 +428,7 @@ export class SunearCodexReceiver {
     }, Math.min(5_000, Math.max(1_000, Math.floor(this.heartbeatMs / 2))));
     try {
       while (!this.stopping) {
+        if (this.recoveryRequested) throw new Error("SUNEAR_RECOVERY_REQUESTED");
         try {
           await this.pollOnce();
         } catch (error) {

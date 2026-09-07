@@ -1,4 +1,4 @@
-export const RECEIVER_VERSION = "0.7.4";
+export const RECEIVER_VERSION = "0.7.5";
 export const RECEIVER_RUNTIME = "codex_app_server";
 export const EXECUTION_SCHEMA_VERSION = "sunear.agent-execution/3";
 export const SUPPORTED_COMMANDS = Object.freeze(["continue_project_workflow", "receiver_diagnostic"]);
@@ -99,11 +99,19 @@ export function assertReceiverTools(statusResponse, serverName = "sunear") {
 }
 
 export async function callSunearTool(client, threadId, tool, args = {}, timeoutMs) {
-  const result = await client.request("mcpServer/tool/call", {
+  let result;
+  try { result = await client.request("mcpServer/tool/call", {
     threadId,
     server: "sunear",
     tool,
     arguments: args,
-  }, timeoutMs);
+  }, timeoutMs); }
+  catch (error) {
+    if (error instanceof Error && error.message.startsWith("CODEX_APP_SERVER_ERROR:")
+      && /\bAuth required\b|\binvalid_grant\b/.test(error.message)) {
+      throw new Error("SUNEAR_MCP_NOT_AUTHENTICATED");
+    }
+    throw error;
+  }
   return readMcpToolResult(result);
 }

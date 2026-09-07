@@ -81,7 +81,7 @@ async function readHookInput() {
   return JSON.parse(Buffer.concat(chunks).toString("utf8"));
 }
 
-function sendControl(socketPath, message, timeoutMs = 2_000) {
+export function sendControl(socketPath, message, timeoutMs = 2_000) {
   return new Promise((resolvePromise, reject) => {
     const socket = net.createConnection(socketPath);
     let response = "";
@@ -106,7 +106,7 @@ function sendControl(socketPath, message, timeoutMs = 2_000) {
 
 async function waitForControl(socketPath) {
   let lastError;
-  for (let attempt = 0; attempt < 40; attempt += 1) {
+  for (let attempt = 0; attempt < 150; attempt += 1) {
     try {
       return await sendControl(socketPath, { command: "status" });
     } catch (error) {
@@ -118,7 +118,7 @@ async function waitForControl(socketPath) {
 }
 
 async function waitForControlStop(socketPath) {
-  for (let attempt = 0; attempt < 40; attempt += 1) {
+  for (let attempt = 0; attempt < 150; attempt += 1) {
     try {
       await sendControl(socketPath, { command: "status" }, 250);
       await new Promise((resolvePromise) => setTimeout(resolvePromise, 100));
@@ -231,10 +231,15 @@ async function runDaemon({ socketPath, lockPath, cwd, dataDirectory, initialSess
   let receiverState = "starting";
   let activeReceiver = null;
   let stopRequested = false;
+  let recoveryError = null;
+  let resumeRecovery = null;
+  let generation = 0;
+  let requestedGeneration = 0;
   const closeServer = () => { if (server.listening) server.close(); };
   const stopDaemon = async () => {
     if (stopRequested) return;
     stopRequested = true;
+    resumeRecovery?.();
     sessions.clear();
     await activeReceiver?.stop();
     closeServer();
@@ -250,12 +255,23 @@ async function runDaemon({ socketPath, lockPath, cwd, dataDirectory, initialSess
         if (message.command === "session-start" && typeof message.sessionId === "string") sessions.add(message.sessionId);
         else if (message.command === "session-end" && typeof message.sessionId === "string") sessions.delete(message.sessionId);
         else if (message.command === "stop") sessions.clear();
+        else if (message.command === "recover") {
+          requestedGeneration = Math.max(requestedGeneration, receiverState === "starting" ? generation : generation + 1);
+          recoveryError = null;
+          if (resumeRecovery) { receiverState = "starting"; resumeRecovery(); }
+          else if (activeReceiver && receiverState !== "starting") { activeReceiver.recoveryRequested = true; receiverState = "recovering"; }
+        }
         else if (message.command !== "status") throw new Error("INVALID_RECEIVER_CONTROL_COMMAND");
         response = {
           ok: true,
           version: RECEIVER_VERSION,
           ...pluginIdentity,
           state: receiverState,
+          generation,
+          requestedGeneration,
+          recoveryError,
+          deviceId: receiverIdentity.deviceId,
+          receiverId: receiverIdentity.receiverId,
           sessions: sessions.size,
           pid: process.pid,
         };
@@ -281,6 +297,8 @@ async function runDaemon({ socketPath, lockPath, cwd, dataDirectory, initialSess
   try {
     while (!stopRequested) {
       receiverState = "starting";
+      generation += 1;
+      recoveryError = null;
       const receiver = new SunearCodexReceiver({
         cwd,
         ...receiverIdentity,
@@ -296,13 +314,19 @@ async function runDaemon({ socketPath, lockPath, cwd, dataDirectory, initialSess
       } catch (error) {
         await receiver.stop();
         if (!stopRequested) {
-          receiverState = "degraded";
-          process.stderr.write(`${error instanceof Error ? error.stack ?? error.message : String(error)}\n`);
+          const intentionalRecovery = error instanceof Error && error.message === "SUNEAR_RECOVERY_REQUESTED";
+          receiverState = intentionalRecovery ? "starting" : "degraded";
+          recoveryError = intentionalRecovery ? null : error instanceof Error ? error.message.match(/^[A-Z][A-Z_]+/)?.[0] ?? "SUNEAR_RECOVERY_FAILED" : "SUNEAR_RECOVERY_FAILED";
+          if (recoveryError) process.stderr.write(`${recoveryError}\n`);
+          if (receiver.oauthLoginAttempted && !intentionalRecovery) {
+            await new Promise((resolvePromise) => { resumeRecovery = resolvePromise; });
+            resumeRecovery = null;
+          }
         }
       } finally {
         activeReceiver = null;
       }
-      if (!stopRequested) await new Promise((resolvePromise) => setTimeout(resolvePromise, RESTART_DELAY_MS));
+      if (!stopRequested && receiverState !== "starting") await new Promise((resolvePromise) => setTimeout(resolvePromise, RESTART_DELAY_MS));
     }
     receiverState = "stopped";
   } finally {
