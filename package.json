@@ -1,6 +1,6 @@
 {
   "name": "sunear-codex-marketplace",
-  "version": "0.1.11",
+  "version": "0.1.12",
   "private": true,
   "type": "module",
   "scripts": {
