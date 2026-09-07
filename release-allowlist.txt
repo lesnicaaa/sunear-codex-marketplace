@@ -11,6 +11,7 @@ plugins/sunear-designer/assets/icon.svg
 plugins/sunear-designer/hooks/hooks.json
 plugins/sunear-designer/scripts/lib/codex-app-server-client.mjs
 plugins/sunear-designer/scripts/lib/sunear-codex-receiver-core.mjs
+plugins/sunear-designer/scripts/lib/sunear-codex-receiver-identity.mjs
 plugins/sunear-designer/scripts/lib/sunear-codex-receiver.mjs
 plugins/sunear-designer/scripts/sunear-codex-receiver-launch.ps1
 plugins/sunear-designer/scripts/sunear-codex-receiver-launch.sh
