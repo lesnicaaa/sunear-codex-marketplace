@@ -87,6 +87,7 @@ export class SunearCodexReceiver {
    *   client?: import("./codex-app-server-client.mjs").CodexAppServerClient,
    *   heartbeatMs?: number,
    *   pollMs?: number,
+   *   model?: string,
    *   executionTimeoutMs?: number,
    *   claimRenewalMs?: number,
    *   sleep?: (milliseconds: number) => Promise<void>,
@@ -118,6 +119,7 @@ export class SunearCodexReceiver {
     client,
     heartbeatMs = DEFAULT_HEARTBEAT_MS,
     pollMs = DEFAULT_POLL_MS,
+    model = "gpt-5.6-terra",
     executionTimeoutMs = DEFAULT_EXECUTION_TIMEOUT_MS,
     claimRenewalMs = CLAIM_RENEWAL_MS,
     sleep = delay,
@@ -150,6 +152,7 @@ export class SunearCodexReceiver {
     });
     this.heartbeatMs = heartbeatMs;
     this.pollMs = pollMs;
+    this.model = model;
     this.executionTimeoutMs = executionTimeoutMs;
     this.claimRenewalMs = claimRenewalMs;
     this.sleep = sleep;
@@ -202,6 +205,7 @@ export class SunearCodexReceiver {
       sandbox: "read-only",
       ephemeral: true,
       serviceName: "sunear_receiver",
+      model: this.model,
     });
     const threadId = response?.thread?.id;
     if (typeof threadId !== "string" || !threadId) throw new Error("CODEX_APP_SERVER_THREAD_START_FAILED");
@@ -388,12 +392,25 @@ export class SunearCodexReceiver {
       throw error;
     }
     await this.finish(request, "completed", undefined, resultText);
+    this.logger.error(JSON.stringify({ event: "sunear_receiver_execution_timing", at: new Date(this.now()).toISOString(),
+      requestId: request.requestId, receiverId: this.receiverId, stage: "settled", model: this.model }));
     return request;
   }
 
   async execute(request) {
+    const startedAt = this.now();
+    const trace = (stage, extra = {}) => this.logger.error(JSON.stringify({
+      event: "sunear_receiver_execution_timing", at: new Date(this.now()).toISOString(),
+      requestId: request.requestId, receiverId: this.receiverId,
+      elapsedMs: this.now() - startedAt, stage, model: this.model, ...extra,
+    }));
+    trace("claimed");
     const threadId = await this.startThread();
-    await this.ensureReceiverTools(threadId);
+    trace("thread_started", { threadId });
+    if (request.command.type !== "receiver_diagnostic") {
+      await this.ensureReceiverTools(threadId);
+      trace("tools_ready", { threadId });
+    }
     if (request.leaseExpiresAt <= this.now() + SETTLEMENT_MARGIN_MS) throw new Error("EXECUTION_REQUEST_LEASE_EXPIRED");
     const completed = this.client.createNotificationWaiter(
       (message) => message.method === "turn/completed" && message.params?.threadId === threadId,
@@ -405,7 +422,12 @@ export class SunearCodexReceiver {
     let rejectRenewal;
     let renewalInFlight = false;
     let finalMessage = "";
+    let firstOutput = false;
     const unsubscribe = this.client.subscribeNotifications((message) => {
+      if (!firstOutput && message.params?.threadId === threadId && message.method === "item/agentMessage/delta") {
+        firstOutput = true;
+        trace("first_output", { threadId });
+      }
       const item = message?.method === "item/completed" ? message.params?.item : null;
       if (message.params?.threadId === threadId && item?.type === "agentMessage" && (!item.phase || item.phase === "final_answer") && typeof item.text === "string") {
         finalMessage = item.text.trim();
@@ -435,6 +457,7 @@ export class SunearCodexReceiver {
         sandboxPolicy: { type: "readOnly" },
       }, Math.min(this.executionTimeoutMs, request.leaseExpiresAt - this.now() - SETTLEMENT_MARGIN_MS));
       turnId = started?.turn?.id;
+      trace("turn_started", { threadId, turnId });
       if (!turnId) throw new Error("CODEX_APP_SERVER_TURN_START_FAILED");
       await renew();
       renewalTimer = setInterval(() => void renew().catch(rejectRenewal), this.claimRenewalMs);
@@ -442,6 +465,7 @@ export class SunearCodexReceiver {
       turnFinished = true;
       const completedTurn = notification.params?.turn;
       const status = completedTurn?.status;
+      trace("turn_completed", { threadId, turnId, status });
       if (status !== "completed") throw turnFailureError(completedTurn);
       finalMessage ||= finalAgentMessage(completedTurn);
       if (request.command.type === "receiver_diagnostic" && !finalMessage) throw new Error("CODEX_DIAGNOSTIC_RESULT_MISSING");

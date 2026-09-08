@@ -1,6 +1,6 @@
 {
   "name": "sunear-designer",
-  "version": "0.6.0+codex.20260908043637",
+  "version": "0.6.0+codex.20260908180257",
   "description": "Create audited Sunear designs, project interpretations, and formal quotations through the deployed MCP workflow.",
   "author": {
     "name": "Sunear",
@@ -34,8 +34,8 @@
     "composerIcon": "./assets/icon.svg",
     "logo": "./assets/icon.svg",
     "defaultPrompt": [
-      "我要上传 PDF 创建一个 Sunear 项目，逐项核对原图与 Engine 设计，再完成正式报价单。请全程使用中文。",
-      "访问我最近更新的 Sunear 项目，并下载正式 PDF 报价单。请使用中文回复。"
+      "\u6211\u8981\u4e0a\u4f20 PDF \u521b\u5efa\u4e00\u4e2a Sunear \u9879\u76ee\uff0c\u9010\u9879\u6838\u5bf9\u539f\u56fe\u4e0e Engine \u8bbe\u8ba1\uff0c\u518d\u5b8c\u6210\u6b63\u5f0f\u62a5\u4ef7\u5355\u3002\u8bf7\u5168\u7a0b\u4f7f\u7528\u4e2d\u6587\u3002",
+      "\u8bbf\u95ee\u6211\u6700\u8fd1\u66f4\u65b0\u7684 Sunear \u9879\u76ee\uff0c\u5e76\u4e0b\u8f7d\u6b63\u5f0f PDF \u62a5\u4ef7\u5355\u3002\u8bf7\u4f7f\u7528\u4e2d\u6587\u56de\u590d\u3002"
     ]
   }
 }
