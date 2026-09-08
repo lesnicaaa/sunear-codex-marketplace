@@ -6,9 +6,9 @@ architecture="$(uname -m)"
 case "${platform}:${architecture}" in
   Darwin:arm64)
     archive="sunear-codex-receiver-darwin-arm64.gz"
-    expected_sha256="c4f5a2369f4bd5b9488dc065c97c0728b0bf13a779ba7a0176542fae5fb124b4"
-    release_tag="v0.1.13"
-    receiver_version="0.8.0"
+    expected_sha256="86bbd5e1909535ab09718e0072b559aa02688b97b85377377556503486d799a7"
+    release_tag="v0.1.12"
+    receiver_version="0.7.6"
     ;;
   *) echo "SUNEAR_RECEIVER_PLATFORM_UNSUPPORTED: ${platform}:${architecture}" >&2; exit 1 ;;
 esac
@@ -16,6 +16,7 @@ esac
 install_dir="${PLUGIN_DATA}/bin"
 release_base="https://github.com/lesnicaaa/sunear-codex-marketplace/releases/download/${release_tag}"
 executable="${install_dir}/sunear-codex-receiver-${receiver_version}"
+if [ "${1:-}" = "session-end" ]; then exit 0; fi
 if [ ! -x "${executable}" ]; then
   command -v curl >/dev/null 2>&1 || { echo "SUNEAR_RECEIVER_DOWNLOADER_MISSING: curl" >&2; exit 1; }
   mkdir -p "${install_dir}"

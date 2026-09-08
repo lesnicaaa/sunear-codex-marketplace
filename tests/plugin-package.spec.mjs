@@ -9,7 +9,7 @@ const plugin = path.join(root, "plugins/sunear-designer");
 
 test("plugin owns the complete clean-host workflow", async () => {
   const manifest = JSON.parse(await readFile(path.join(plugin, ".codex-plugin/plugin.json"), "utf8"));
-  assert.equal(manifest.version, "0.6.0+codex.20260908043637");
+  assert.equal(manifest.version, "0.5.0+codex.20260907181452");
   assert.equal(manifest.skills, "./skills/");
   assert.equal(manifest.mcpServers, "./.mcp.json");
 
@@ -17,7 +17,6 @@ test("plugin owns the complete clean-host workflow", async () => {
   assert.equal(mcp.mcpServers.sunear.oauth_resource, mcp.mcpServers.sunear.url);
 
   const hooks = JSON.parse(await readFile(path.join(plugin, "hooks/hooks.json"), "utf8"));
-  assert.deepEqual(Object.keys(hooks.hooks), ["SessionStart"]);
   const startup = hooks.hooks.SessionStart[0].hooks[0];
   assert.match(startup.command, /sunear-codex-receiver-launch\.sh/);
   assert.match(startup.commandWindows, /sunear-codex-receiver-launch\.ps1/);
@@ -27,7 +26,7 @@ test("plugin owns the complete clean-host workflow", async () => {
     path.join(plugin, "scripts/lib/sunear-codex-receiver-core.mjs"),
     "utf8",
   );
-  assert.match(receiverCore, /RECEIVER_VERSION = "0\.8\.0"/);
+  assert.match(receiverCore, /RECEIVER_VERSION = "0\.7\.6"/);
 
   const receiverSupervisor = await readFile(
     path.join(plugin, "scripts/sunear-codex-receiver-supervisor.mjs"),
@@ -54,16 +53,18 @@ test("plugin owns the complete clean-host workflow", async () => {
   assert.match(receiverIdentity, /plugins\/cache/);
 
   const posixLauncher = await readFile(path.join(plugin, "scripts/sunear-codex-receiver-launch.sh"), "utf8");
-  assert.match(posixLauncher, /release_tag="v0\.1\.13"/);
+  assert.match(posixLauncher, /release_tag="v0\.1\.12"/);
   assert.match(posixLauncher, /Darwin:arm64/);
   assert.doesNotMatch(posixLauncher, /Darwin:x86_64/);
   assert.doesNotMatch(posixLauncher, /Linux:/);
   assert.match(posixLauncher, /expected_sha256="[a-f0-9]{64}"/);
   assert.match(posixLauncher, /SUNEAR_RECEIVER_ARCHIVE_CHECKSUM_MISMATCH/);
+  assert.match(posixLauncher, /\$\{1:-\}" = "session-end" \]; then exit 0/);
   const windowsLauncher = await readFile(path.join(plugin, "scripts/sunear-codex-receiver-launch.ps1"), "utf8");
   assert.match(windowsLauncher, /PROCESSOR_ARCHITECTURE -ne "AMD64"/);
-  assert.match(windowsLauncher, /releases\/download\/v0\.1\.13/);
-  assert.match(windowsLauncher, /sunear-codex-receiver-0\.8\.0\.exe/);
+  assert.match(windowsLauncher, /releases\/download\/v0\.1\.12/);
+  assert.match(windowsLauncher, /sunear-codex-receiver-0\.7\.6\.exe/);
+  assert.match(windowsLauncher, /\$args\[0\] -eq "session-end"\) \{ exit 0 \}/);
   assert.match(windowsLauncher, /Get-FileHash/);
   await assert.rejects(stat(path.join(plugin, "bin")), { code: "ENOENT" });
 
