@@ -9,7 +9,7 @@ import {
 } from "./sunear-codex-receiver-core.mjs";
 
 const DEFAULT_HEARTBEAT_MS = 15_000;
-const DEFAULT_POLL_MS = 5_000;
+const DEFAULT_POLL_MS = 60_000;
 const DEFAULT_EXECUTION_TIMEOUT_MS = 30 * 60_000;
 const MCP_STARTUP_TIMEOUT_MS = 30_000;
 const HEARTBEAT_REQUEST_TIMEOUT_MS = 10_000;
@@ -167,6 +167,12 @@ export class SunearCodexReceiver {
     this.heartbeatTimer = null;
     this.stopPromise = null;
     this.recoveryRequested = false;
+    this.notification = null;
+    this.notificationSocket = null;
+    this.notificationRetry = null;
+    this.notificationDelayMs = 1000;
+    this.workPending = false;
+    this.workWaiter = null;
   }
 
   setStatus(status) {
@@ -277,12 +283,67 @@ export class SunearCodexReceiver {
       pluginVersion: this.pluginVersion,
     }, timeoutMs);
     this.lastHeartbeatAt = this.now();
+    if (response.notification) {
+      this.notification = response.notification;
+      this.connectNotifications();
+    }
     this.setStatus(status);
     if (!this.browserPairingOpened && typeof response.browserPairingUrl === "string") {
       try { await this.onBrowserPairingUrl(response.browserPairingUrl); this.browserPairingOpened = true; }
       catch (error) { this.logger.error(`SUNEAR_BROWSER_PAIRING_OPEN_FAILED: ${error instanceof Error ? error.message : String(error)}`); }
     }
     return response;
+  }
+
+  wakeForWork() {
+    this.workPending = true;
+    this.workWaiter?.();
+  }
+
+  waitForWork() {
+    if (this.stopping || this.workPending) { this.workPending = false; return Promise.resolve(); }
+    return new Promise((resolve) => {
+      const finish = () => { clearTimeout(timer); this.workWaiter = null; this.workPending = false; resolve(); };
+      const timer = setTimeout(finish, this.pollMs);
+      this.workWaiter = finish;
+    });
+  }
+
+  connectNotifications() {
+    if (this.stopping || this.notificationSocket || this.notificationRetry || !this.notification) return;
+    const grant = this.notification;
+    if (grant.expiresAt <= this.now()) return;
+    let url;
+    try { url = new URL(grant.url); } catch { return; }
+    if ((url.protocol !== "wss:" && !(url.protocol === "ws:" && ["localhost", "127.0.0.1", "[::1]"].includes(url.hostname)))
+      || url.username || url.password || url.search || url.hash || url.pathname !== "/api/agent/v1/receiver-notifications"
+      || typeof grant.ticket !== "string" || grant.ticket.length > 2048) return;
+    const retry = () => {
+      if (this.stopping) return;
+      this.notificationRetry = setTimeout(() => {
+        this.notificationRetry = null; this.connectNotifications();
+      }, this.notificationDelayMs + Math.floor(Math.random() * 500));
+      this.notificationDelayMs = Math.min(60_000, this.notificationDelayMs * 2);
+    };
+    try {
+      const socket = new WebSocket(url);
+      this.notificationSocket = socket;
+      const deadline = setTimeout(() => socket.close(), Math.max(1, grant.expiresAt - this.now()));
+      const handshake = setTimeout(() => socket.close(), 10_000);
+      socket.addEventListener("open", () => socket.send(JSON.stringify({ ticket: grant.ticket })));
+      socket.addEventListener("message", (event) => {
+        if (event.data !== '{"type":"wake"}') return;
+        clearTimeout(handshake);
+        this.notificationDelayMs = 1000;
+        this.wakeForWork();
+      });
+      socket.addEventListener("error", () => socket.close());
+      socket.addEventListener("close", () => {
+        clearTimeout(deadline); clearTimeout(handshake);
+        if (this.notificationSocket === socket) this.notificationSocket = null;
+        retry();
+      });
+    } catch { retry(); }
   }
 
   async heartbeatIfDue() {
@@ -430,12 +491,13 @@ export class SunearCodexReceiver {
       while (!this.stopping) {
         if (this.recoveryRequested) throw new Error("SUNEAR_RECOVERY_REQUESTED");
         try {
-          await this.pollOnce();
+          const executed = await this.pollOnce();
+          if (executed) continue;
         } catch (error) {
           if (isFatalReceiverError(error)) throw error;
           this.logger.error(error instanceof Error ? error.message : String(error));
         }
-        if (!this.stopping) await this.sleep(this.pollMs);
+        if (!this.stopping) await this.waitForWork();
       }
     } finally {
       clearInterval(this.heartbeatTimer);
@@ -451,6 +513,11 @@ export class SunearCodexReceiver {
 
   async performStop() {
     this.stopping = true;
+    clearTimeout(this.notificationRetry);
+    this.notificationRetry = null;
+    this.notificationSocket?.close();
+    this.notificationSocket = null;
+    this.wakeForWork();
     if (this.heartbeatTimer) {
       clearInterval(this.heartbeatTimer);
       this.heartbeatTimer = null;

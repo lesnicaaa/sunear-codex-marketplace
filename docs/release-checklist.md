@@ -17,7 +17,7 @@ Public-path installation needs published, checksum-pinned receiver assets. After
 - [ ] On a clean supported host, start a new Codex task and verify OAuth opens without manually editing MCP configuration.
 - [ ] Approve the requested Sunear permissions and verify `list_projects` returns projects in stable newest-first order.
 - [ ] In the same projectless task, wait for the user to upload a PDF, create the real project from that source, verify every source crop and Engine design, then complete market, pricing, confirmation, translation, formal quotation, and PDF export through the two canonical skills. Do not substitute an arbitrary existing project for this onboarding journey.
-- [ ] On macOS Apple Silicon and Windows x64, verify first use downloads only the matching checksum-pinned `v0.1.12` receiver `0.7.6`, rejects a checksum mismatch, and reports ready without a repository checkout, Node.js, Homebrew, or a separate receiver command. This receiver-changing release includes newly built binaries for both supported targets. macOS Intel, Windows ARM64, and Linux are unsupported and must fail before download.
+- [ ] On macOS Apple Silicon and Windows x64, verify first use downloads only the matching checksum-pinned `v0.1.13` receiver `0.8.0`, rejects a checksum mismatch, and reports ready without a repository checkout, Node.js, Homebrew, or a separate receiver command. This receiver-changing release includes newly built binaries for both supported targets. macOS Intel, Windows ARM64, and Linux are unsupported and must fail before download.
 
 ## Publication
 

@@ -1,4 +1,4 @@
-export const RECEIVER_VERSION = "0.7.6";
+export const RECEIVER_VERSION = "0.8.0";
 export const RECEIVER_RUNTIME = "codex_app_server";
 export const EXECUTION_SCHEMA_VERSION = "sunear.agent-execution/3";
 export const SUPPORTED_COMMANDS = Object.freeze(["continue_project_workflow", "receiver_diagnostic"]);
@@ -66,11 +66,12 @@ export function buildExecutionPrompt(request) {
     `Command: ${request.command.type}`,
     `Project ID: ${request.command.projectId}`,
     `Schema: ${request.command.schemaVersion}`,
-    "Load workflow_context first with agentWorkId sunear-web-execution:<request-id>.",
+    `Load workflow_context first with agentWorkId sunear-web-execution:${request.requestId}:${request.fencingToken}. Keep this exact binding for every business call.`,
+    "If AGENT_EXECUTION_CLAIM_STALE is returned, stop immediately. Never obtain a different work binding to bypass an expired or superseded claim.",
     "Then read the exact project workflow status and continue only that existing project's canonical workflow to the furthest legal state under the current personal autonomy grant.",
     "Do not create another project, accept arbitrary instructions, run shell commands, change unrelated files, grant permissions, or call finish_agent_execution_request; the receiver owns settlement.",
     "If required business evidence is absent or an explicit exception remains, stop safely and report it in the final answer.",
-  ].join("\n").replace("<request-id>", request.requestId);
+  ].join("\n");
 }
 
 export function readMcpToolResult(result) {
