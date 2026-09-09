@@ -11,6 +11,7 @@ import { fileURLToPath } from "node:url";
 import { RECEIVER_VERSION } from "./lib/sunear-codex-receiver-core.mjs";
 import { readOrCreateReceiverIdentity } from "./lib/sunear-codex-receiver-identity.mjs";
 import { SunearCodexReceiver } from "./lib/sunear-codex-receiver.mjs";
+import { startSunearLocalAssetServer, SunearLocalAssetStore } from "./lib/sunear-codex-local-assets.mjs";
 
 const scriptPath = fileURLToPath(import.meta.url);
 const RECEIVER_INSTANCE_ID = "sunear-designer";
@@ -305,6 +306,8 @@ export async function runDaemon({ socketPath, lockPath, cwd, dataDirectory, rece
   let consecutiveFailures = 0;
   let resumeRecovery = null;
   let generation = 0;
+  const canonicalOrigin = new URL(process.env.SUNEAR_CANONICAL_ORIGIN ?? "https://stage.sunearbuild.com").origin;
+  const localAssets = await startSunearLocalAssetServer({ directory: resolve(dataDirectory, "local-assets"), origin: canonicalOrigin });
   let requestedGeneration = 0;
   const closeServer = () => { if (server.listening) server.close(); };
   const stopDaemon = async () => {
@@ -375,7 +378,7 @@ export async function runDaemon({ socketPath, lockPath, cwd, dataDirectory, rece
         ...pluginIdentity,
         logger: { error: (message) => process.stderr.write(`[receiver] ${message}\n`) },
         onStatusChange: (status) => { receiverState = status; if (status === "ready") consecutiveFailures = 0; },
-        onBrowserPairingUrl: (url) => interactiveAuthorization ? openBrowserPairingUrl(url) : undefined,
+        onBrowserPairingUrl: (url) => interactiveAuthorization ? openBrowserPairingUrl(localAssets.pairUrl(url)) : undefined,
         onOAuthAuthorizationUrl: (url) => {
           if (!interactiveAuthorization) throw new Error("SUNEAR_AUTHORIZATION_REQUIRED");
           return openBrowserPairingUrl(url);
@@ -415,6 +418,7 @@ export async function runDaemon({ socketPath, lockPath, cwd, dataDirectory, rece
     process.off("SIGTERM", onTermination);
     process.off("SIGINT", onTermination);
     closeServer();
+    await localAssets.close();
     if (process.platform !== "win32") await unlink(socketPath).catch(() => {});
     process.off("exit", releaseLock);
     releaseLock();
@@ -441,10 +445,14 @@ async function main() {
     }
     else if (command === "session-start") {
       await installReceiverStartup(socketPath, dataDirectory, readPluginRuntimeIdentity(), receiverIdentity.agentKind);
+    } else if (command === "cache-image") {
+      const file = flag("--file");
+      if (!file) throw new Error("SUNEAR_LOCAL_ASSET_FILE_REQUIRED");
+      console.log(JSON.stringify(await new SunearLocalAssetStore(resolve(dataDirectory, "local-assets")).put(file)));
     } else if (command === "status") console.log(JSON.stringify(await sendControl(socketPath, { command: "status" }), null, 2));
     else if (command === "stop") await sendControl(socketPath, { command: "stop" });
     else {
-      console.error("Usage: sunear-codex-receiver-supervisor.mjs <session-start|status|stop|daemon>");
+      console.error("Usage: sunear-codex-receiver-supervisor.mjs <session-start|cache-image|status|stop|daemon>");
       process.exitCode = 2;
     }
   } catch (error) {

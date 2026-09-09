@@ -4,10 +4,10 @@ if ($env:PROCESSOR_ARCHITECTURE -ne "AMD64") {
 }
 
 $archive = "sunear-codex-receiver-windows-x64.exe.gz"
-$expectedSha256 = "ead30656251fd27b28a02cbe2a9b6612be8e00efa53444de949d8c94a8d19c61"
-$downloadUrl = "https://github.com/lesnicaaa/sunear-codex-marketplace/releases/download/v0.1.14/$archive"
+$expectedSha256 = "ac0f473c7561bff7fce345d71c5ee4367916f4fa1bfca1c67211677f1f551484"
+$downloadUrl = "https://github.com/lesnicaaa/sunear-codex-marketplace/releases/download/v0.1.15/$archive"
 $installDirectory = Join-Path $env:PLUGIN_DATA "bin"
-$executable = Join-Path $installDirectory "sunear-codex-receiver-0.8.1.exe"
+$executable = Join-Path $installDirectory "sunear-codex-receiver-0.9.0.exe"
 if (-not (Test-Path $executable)) {
   New-Item -ItemType Directory -Force -Path $installDirectory | Out-Null
   $archiveTemporary = Join-Path $installDirectory ".sunear-receiver.$([Guid]::NewGuid().ToString('N')).gz"

@@ -9,7 +9,7 @@ const plugin = path.join(root, "plugins/sunear-designer");
 
 test("plugin owns the complete clean-host workflow", async () => {
   const manifest = JSON.parse(await readFile(path.join(plugin, ".codex-plugin/plugin.json"), "utf8"));
-  assert.equal(manifest.version, "0.6.0+codex.20260908180257");
+  assert.equal(manifest.version, "0.6.0+codex.20260909125700");
   assert.equal(manifest.skills, "./skills/");
   assert.equal(manifest.mcpServers, "./.mcp.json");
 
@@ -27,7 +27,7 @@ test("plugin owns the complete clean-host workflow", async () => {
     path.join(plugin, "scripts/lib/sunear-codex-receiver-core.mjs"),
     "utf8",
   );
-  assert.match(receiverCore, /RECEIVER_VERSION = "0\.8\.1"/);
+  assert.match(receiverCore, /RECEIVER_VERSION = "0\.9\.0"/);
 
   const receiverSupervisor = await readFile(
     path.join(plugin, "scripts/sunear-codex-receiver-supervisor.mjs"),
@@ -36,6 +36,7 @@ test("plugin owns the complete clean-host workflow", async () => {
   assert.match(receiverSupervisor, /receiverRuntimeMatches/);
   assert.match(receiverSupervisor, /pluginSource === pluginIdentity\.pluginSource/);
   assert.match(receiverSupervisor, /Google Chrome/);
+  assert.match(receiverSupervisor, /startSunearLocalAssetServer/);
 
   const appServerClient = await readFile(
     path.join(plugin, "scripts/lib/codex-app-server-client.mjs"),
@@ -54,7 +55,7 @@ test("plugin owns the complete clean-host workflow", async () => {
   assert.match(receiverIdentity, /plugins\/cache/);
 
   const posixLauncher = await readFile(path.join(plugin, "scripts/sunear-codex-receiver-launch.sh"), "utf8");
-  assert.match(posixLauncher, /release_tag="v0\.1\.14"/);
+  assert.match(posixLauncher, /release_tag="v0\.1\.15"/);
   assert.match(posixLauncher, /Darwin:arm64/);
   assert.doesNotMatch(posixLauncher, /Darwin:x86_64/);
   assert.doesNotMatch(posixLauncher, /Linux:/);
@@ -62,8 +63,8 @@ test("plugin owns the complete clean-host workflow", async () => {
   assert.match(posixLauncher, /SUNEAR_RECEIVER_ARCHIVE_CHECKSUM_MISMATCH/);
   const windowsLauncher = await readFile(path.join(plugin, "scripts/sunear-codex-receiver-launch.ps1"), "utf8");
   assert.match(windowsLauncher, /PROCESSOR_ARCHITECTURE -ne "AMD64"/);
-  assert.match(windowsLauncher, /releases\/download\/v0\.1\.14/);
-  assert.match(windowsLauncher, /sunear-codex-receiver-0\.8\.1\.exe/);
+  assert.match(windowsLauncher, /releases\/download\/v0\.1\.15/);
+  assert.match(windowsLauncher, /sunear-codex-receiver-0\.9\.0\.exe/);
   assert.match(windowsLauncher, /Get-FileHash/);
   await assert.rejects(stat(path.join(plugin, "bin")), { code: "ENOENT" });
 
@@ -72,6 +73,7 @@ test("plugin owns the complete clean-host workflow", async () => {
     "skills/sunear-create-quote-from-project/SKILL.md",
     "scripts/sunear-codex-receiver-launch.sh",
     "scripts/sunear-codex-receiver-launch.ps1",
+    "scripts/lib/sunear-codex-local-assets.mjs",
   ]) await access(path.join(plugin, relativePath));
 
   for (const relativePath of [

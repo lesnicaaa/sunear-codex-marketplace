@@ -23,3 +23,4 @@ plugins/sunear-designer/skills/sunear-create-quote-from-project/SKILL.md
 plugins/sunear-designer/skills/sunear-create-quote-from-project/agents/openai.yaml
 plugins/sunear-designer/skills/sunear-create-quote-from-project/references/commercial-contract.md
 scripts/smoke-install.mjs
+plugins/sunear-designer/scripts/lib/sunear-codex-local-assets.mjs
