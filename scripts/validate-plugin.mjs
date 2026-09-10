@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { readFile } from "node:fs/promises";
+import { readFile, stat } from "node:fs/promises";
 import { fileURLToPath } from "node:url";
 import path from "node:path";
 
@@ -28,9 +28,9 @@ for (const skill of ["sunear-create-design-from-pdf", "sunear-create-quote-from-
   assert.ok(contents.trim(), `${skill} must be packaged`);
 }
 
-const hooks = await readJson("plugins/sunear-designer/hooks/hooks.json");
-assert.match(hooks.hooks?.SessionStart?.[0]?.hooks?.[0]?.command ?? "", /sunear-codex-receiver-launch\.sh/);
-assert.match(hooks.hooks?.SessionStart?.[0]?.hooks?.[0]?.commandWindows ?? "", /sunear-codex-receiver-launch\.ps1/);
+for (const directory of ["hooks", "scripts", "bin"]) {
+  await assert.rejects(stat(path.join(root, "plugins/sunear-designer", directory)), { code: "ENOENT" });
+}
 
 const entry = marketplace.plugins?.find(({ name }) => name === "sunear-designer");
 assert.ok(entry, "marketplace must list sunear-designer");

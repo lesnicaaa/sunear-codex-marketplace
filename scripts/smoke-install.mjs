@@ -33,20 +33,10 @@ export async function smokeInstall({ log = console.log } = {}) {
     }
     const mcp = JSON.parse(await readFile(path.join(installed.installedPath, ".mcp.json"), "utf8"));
     assert.equal(mcp.mcpServers?.sunear?.url, "https://stage.sunearbuild.com/api/mcp");
-    const hooks = JSON.parse(await readFile(path.join(installed.installedPath, "hooks/hooks.json"), "utf8"));
-    assert.deepEqual(Object.keys(hooks.hooks), ["SessionStart"]);
-    assert.match(hooks.hooks.SessionStart[0].hooks[0].command, /receiver-launch\.sh/);
-    assert.match(hooks.hooks.SessionStart[0].hooks[0].commandWindows, /receiver-launch\.ps1/);
-    const launcher = await readFile(path.join(installed.installedPath, "scripts/sunear-codex-receiver-launch.sh"), "utf8");
-    assert.match(launcher, /release_tag="v0\.1\.15"/);
-    assert.match(launcher, /Darwin:arm64/);
-    assert.doesNotMatch(launcher, /Darwin:x86_64|Linux:/);
-    assert.match(launcher, /expected_sha256="[a-f0-9]{64}"/);
-    const windowsLauncher = await readFile(path.join(installed.installedPath, "scripts/sunear-codex-receiver-launch.ps1"), "utf8");
-    assert.match(windowsLauncher, /PROCESSOR_ARCHITECTURE -ne "AMD64"/);
-    assert.match(windowsLauncher, /releases\/download\/v0\.1\.15/);
-    await assert.rejects(stat(path.join(installed.installedPath, "bin")), { code: "ENOENT" });
-    log("PASS clean-profile marketplace install and platform-specific receiver discovery");
+    for (const directory of ["hooks", "scripts", "bin"]) {
+      await assert.rejects(stat(path.join(installed.installedPath, directory)), { code: "ENOENT" });
+    }
+    log("PASS clean-profile plugin install without resident runtime or startup hooks");
     log("MANUAL OAuth consent and authenticated PDF quotation download are required before release");
   } finally {
     await rm(profile, { recursive: true, force: true });
